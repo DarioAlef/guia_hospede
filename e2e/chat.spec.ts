@@ -4,7 +4,7 @@ test.describe("Assistente Virtual — fluxo principal", () => {
   test("abrir widget e receber resposta em streaming para FLN001", async ({
     page,
   }) => {
-    await page.goto("/FLN001");
+    await page.goto("/property/FLN001");
 
     const toggleBtn = page.getByRole("button", { name: /abrir assistente/i });
     await expect(toggleBtn).toBeVisible();
@@ -28,7 +28,7 @@ test.describe("Assistente Virtual — fluxo principal", () => {
   });
 
   test("fechar e reabrir o widget preserva o botão coral", async ({ page }) => {
-    await page.goto("/FLN001");
+    await page.goto("/property/FLN001");
 
     const openBtn = page.getByRole("button", { name: /abrir assistente/i });
     await openBtn.click();

@@ -3,8 +3,10 @@ import { PropertyService } from "./property.service.js";
 import type { PropertyRepository } from "./property.repository.js";
 
 const mockFindByCode = vi.fn();
+const mockFindAll = vi.fn();
 const mockRepository = {
   findByCode: mockFindByCode,
+  findAll: mockFindAll,
 } as unknown as PropertyRepository;
 
 describe("PropertyService", () => {
@@ -72,5 +74,64 @@ describe("PropertyService", () => {
     expect(result.host.name).toBe("Carlos Mendes");
     expect(result.amenities).toContain("wifi");
     expect(mockFindByCode).toHaveBeenCalledWith("FLN001");
+  });
+
+  it("retorna lista resumida apenas com campos públicos seguros", async () => {
+    const mockRows = [
+      {
+        code: "GRM001",
+        name: "Chalé Serra Gramado",
+        type: "Casa",
+        bedrooms: 3,
+        guestCapacity: 6,
+        address: { city: "Gramado", state: "RS" },
+        images: ["/images/grm001.jpeg"],
+        operational: { wifiPassword: "segredo", propertyPassword: "1983" },
+      },
+    ];
+
+    mockFindAll.mockResolvedValue(mockRows);
+
+    const result = await service.listAll();
+
+    expect(result).toHaveLength(1);
+    expect(result[0]).toEqual({
+      code: "GRM001",
+      name: "Chalé Serra Gramado",
+      type: "Casa",
+      bedrooms: 3,
+      guestCapacity: 6,
+      city: "Gramado",
+      state: "RS",
+      image: "/images/grm001.jpeg",
+    });
+    expect(result[0]).not.toHaveProperty("operational");
+    expect(JSON.stringify(result)).not.toContain("segredo");
+  });
+
+  it("usa null como imagem quando o imóvel não possui imagens", async () => {
+    mockFindAll.mockResolvedValue([
+      {
+        code: "PER007",
+        name: "Loft Centro",
+        type: "Loft",
+        bedrooms: 1,
+        guestCapacity: 2,
+        address: { city: "Curitiba", state: "PR" },
+        images: [],
+      },
+    ]);
+
+    const result = await service.listAll();
+
+    expect(result[0]?.image).toBeNull();
+  });
+
+  it("retorna lista vazia quando não há imóveis cadastrados", async () => {
+    mockFindAll.mockResolvedValue([]);
+
+    const result = await service.listAll();
+
+    expect(result).toEqual([]);
   });
 });

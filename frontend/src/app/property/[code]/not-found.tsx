@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function NotFound() {
   return (
     <main
@@ -12,9 +14,15 @@ export default function NotFound() {
         <p className="text-slate-300 text-sm leading-relaxed mb-2">
           O código informado não corresponde a nenhum imóvel cadastrado.
         </p>
-        <p className="text-slate-400 text-sm leading-relaxed">
+        <p className="text-slate-400 text-sm leading-relaxed mb-6">
           Verifique o código recebido do seu anfitrião e tente novamente.
         </p>
+        <Link
+          href="/"
+          className="inline-block rounded-xl bg-seazone-coral px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+        >
+          Ver todos os imóveis
+        </Link>
       </div>
     </main>
   );
