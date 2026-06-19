@@ -48,7 +48,7 @@ export const PropertySchema = z.object({
   operational: OperationalSchema,
   rules: RulesSchema,
   amenities: z.array(z.string()),
-  images: z.array(z.string().url()),
+  images: z.array(z.string().min(1)),
   host: HostSchema,
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
