@@ -1,5 +1,12 @@
 import { notFound } from "next/navigation";
-import { PropertyCard } from "../../features/property";
+import {
+  PropertyHero,
+  CapacityStats,
+  AccessWifiCard,
+  StayRulesCard,
+  AmenitiesCard,
+  HostContactCard,
+} from "../../features/property";
 import { GuidebookSection } from "../../features/guidebook";
 import { ChatWidget } from "../../features/chat";
 import type { PropertyResponse } from "../../shared/dtos/property.dto";
@@ -20,9 +27,24 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const property: PropertyResponse = await res.json();
 
   return (
-    <main className="min-h-screen bg-seazone-background py-6 px-4">
-      <div className="max-w-2xl mx-auto space-y-4">
-        <PropertyCard property={property} />
+    <main className="min-h-screen bg-seazone-background px-4 py-6">
+      <div className="mx-auto max-w-2xl space-y-4">
+        <PropertyHero
+          name={property.name}
+          type={property.type}
+          city={property.address.city}
+          state={property.address.state}
+          imageUrl={property.images[0]}
+        />
+        <CapacityStats
+          bedrooms={property.bedrooms}
+          bathrooms={property.bathrooms}
+          guests={property.guestCapacity}
+        />
+        <AccessWifiCard operational={property.operational} />
+        <StayRulesCard rules={property.rules} />
+        <AmenitiesCard amenities={property.amenities} />
+        <HostContactCard host={property.host} address={property.address} />
         <GuidebookSection code={params.code} backendUrl={backendUrl} />
       </div>
       <ChatWidget code={params.code} />
