@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useChatAssistant } from "../hooks/useChatAssistant";
 import { ChatWindow } from "./ChatWindow";
+import { MessageCircle, X } from "../../../components/ui/icons";
 
 interface ChatWidgetProps {
   code: string;
@@ -28,9 +29,14 @@ export function ChatWidget({ code }: ChatWidgetProps) {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Fechar assistente" : "Abrir assistente"}
-        className="w-14 h-14 rounded-full bg-seazone-coral shadow-sm text-white text-2xl flex items-center justify-center"
+        className="flex items-center gap-2 rounded-full bg-seazone-coral px-5 py-3 text-sm font-semibold text-white shadow-lg transition-transform hover:scale-105"
       >
-        {open ? "✕" : "💬"}
+        {open ? (
+          <X className="h-5 w-5" aria-hidden />
+        ) : (
+          <MessageCircle className="h-5 w-5" aria-hidden />
+        )}
+        {open ? "Fechar" : "Assistente Virtual"}
       </button>
     </div>
   );

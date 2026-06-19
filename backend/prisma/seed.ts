@@ -46,11 +46,7 @@ const properties = [
       "lavanderia",
       "varanda",
     ],
-    images: [
-      "https://images.seazone.com.br/fln001/sala.jpg",
-      "https://images.seazone.com.br/fln001/quarto-1.jpg",
-      "https://images.seazone.com.br/fln001/varanda.jpg",
-    ],
+    images: ["/images/fln001.jpeg"],
     host: { name: "Carlos Mendes", phone: "+55 48 99123-4567" },
   },
   {
@@ -96,11 +92,7 @@ const properties = [
       "banheira-hidro",
       "jardim",
     ],
-    images: [
-      "https://images.seazone.com.br/grm001/fachada.jpg",
-      "https://images.seazone.com.br/grm001/sala-lareira.jpg",
-      "https://images.seazone.com.br/grm001/jardim.jpg",
-    ],
+    images: ["/images/grm001.jpeg"],
     host: { name: "Ana Beatriz Ramos", phone: "+55 54 98876-5432" },
   },
   {
@@ -146,11 +138,7 @@ const properties = [
       "mesa-de-jogos",
       "fogueira",
     ],
-    images: [
-      "https://images.seazone.com.br/per007/fachada.jpg",
-      "https://images.seazone.com.br/per007/piscina.jpg",
-      "https://images.seazone.com.br/per007/churrasqueira.jpg",
-    ],
+    images: ["/images/per007.jpg"],
     host: { name: "Roberto Faria", phone: "+55 11 97654-3210" },
   },
 ];

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Header } from "../components/ui/Header";
 
 export const metadata: Metadata = {
   title: "Seazone — Guia Digital do Hóspede",
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="bg-slate-50 min-h-screen">{children}</body>
+      <body className="bg-seazone-background min-h-screen">
+        <Header />
+        {children}
+      </body>
     </html>
   );
 }
