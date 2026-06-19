@@ -6,3 +6,31 @@ specs/
 CLAUDE.md
 
 about_project.md
+
+# Dependências
+node_modules/
+
+# Variáveis de ambiente (apenas .env.example é versionado)
+.env
+.env.local
+.env.*.local
+
+# DTOs sincronizados (gerados por sync-types — fonte canônica em backend/src/shared/dtos/)
+frontend/src/shared/dtos/
+
+# Artefatos de build
+.next/
+dist/
+out/
+build/
+
+# Playwright
+test-results/
+playwright-report/
+
+# TypeScript
+*.tsbuildinfo
+
+# Sistema operacional
+.DS_Store
+Thumbs.db

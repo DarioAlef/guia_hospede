@@ -1,0 +1,38 @@
+services:
+  backend:
+    image: node:20-alpine
+    working_dir: /app
+    command: >
+      sh -c "npx prisma migrate dev --name init --skip-seed 2>/dev/null || true
+      && npx tsx watch src/server.ts"
+    volumes:
+      - ./backend:/app
+      - backend_nm:/app/node_modules
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/guia_hospede
+      PORT: "3001"
+      NODE_ENV: development
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: npx next dev
+    volumes:
+      - ./frontend:/app
+      - frontend_nm:/app/node_modules
+      - ./backend/src/shared/dtos:/app/src/shared/dtos
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  backend_nm:
+  frontend_nm:
