@@ -1,0 +1,400 @@
+---
+title: RF2 — Guia de Experiências Gerado por IA
+description: Requisito Funcional 2 — restaurantes, atrações e serviços contextualizados por endereço
+---
+
+# Requisito Funcional 2 — Guia de Experiências Gerado por IA
+
+## Descrição
+
+Quando o hóspede acessa o guia do imóvel, a aplicação gera automaticamente um **guia contextualizado** com recomendações de restaurantes, atrações e serviços próximos ao endereço real do imóvel, enriquecido por IA.
+
+## O Que o Hóspede Vê
+
+### Guia de Experiências
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  ✨ Guia de Experiências — Seu Bairro                  │
+│                                                          │
+│  Bem-vindo ao Apartamento Beira-Mar na Trindade!      │
+│  Aqui você encontra os melhores pontos de Floripa.    │
+│                                                          │
+│  🍽️  Restaurantes Próximos                             │
+│  ┌─────────────────────────────────────────┐            │
+│  │ Box 32                                   │            │
+│  │ Aprox. 1,2 km • Boteco tradicional      │            │
+│  │ Famoso pelos petiscos. Ótima pedida.    │            │
+│  └─────────────────────────────────────────┘            │
+│  ┌─────────────────────────────────────────┐            │
+│  │ Armazém Vieira                           │            │
+│  │ Aprox. 2,5 km • Frutos do Mar           │            │
+│  │ Referência desde 1958. Reserve!         │            │
+│  └─────────────────────────────────────────┘            │
+│                                                          │
+│  🎭 Atrações Próximas                                  │
+│  ┌─────────────────────────────────────────┐            │
+│  │ Praia da Joaquina                        │            │
+│  │ Aprox. 18 km • Dunas e Surf             │            │
+│  │ Famosa pelas dunas. Ondas para surfistas│            │
+│  └─────────────────────────────────────────┘            │
+│                                                          │
+│  ⚕️  Serviços Essenciais                               │
+│  ┌─────────────────────────────────────────┐            │
+│  │ Farmácia Catarinense                     │            │
+│  │ Aprox. 300 metros • Farmácia 24h        │            │
+│  │ Av. Madre Benvenuta. Perto de você.    │            │
+│  └─────────────────────────────────────────┘            │
+│                                                          │
+│  🌤️  Dica Sazonal                                       │
+│  Em junho, as temperaturas ficam entre 16-22°C.        │
+│  Leve um agasalho para os dias mais frescos.           │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Conteúdo Gerado
+
+### 1. Mensagem de Boas-vindas (Personalizada)
+
+**Template**:
+```
+Bem-vindo ao {nomeImóvel} na {bairro}!
+Aqui você encontra {topicos} {cidade}.
+```
+
+**Exemplo (FLN001 — Florianópolis)**:
+```
+Bem-vindo ao Apartamento Beira-Mar na Trindade!
+Aqui você encontra os melhores pontos de Floripa.
+```
+
+**Exemplo (GRM001 — Gramado)**:
+```
+Bem-vindo ao Chalé Serra em Planalto!
+Aqui você descobre a magia das montanhas de Gramado.
+```
+
+---
+
+### 2. Restaurantes Próximos (4–5 opções)
+
+**Para cada restaurante**:
+- Nome (real, verificável em Google Maps)
+- Distância aproximada (ex: "Aprox. 1,2 km")
+- Tipo de culinária (ex: "Boteco", "Frutos do Mar")
+- Descrição breve (1–2 linhas, realista)
+
+**Exemplo de payload**:
+```json
+{
+  "name": "Box 32",
+  "distance": "Aprox. 1,2 km",
+  "description": "Boteco tradicional de Florianópolis, famoso pelos petiscos."
+}
+```
+
+**Geração**: LLM (Groq) recebe endereço real (rua, bairro, cidade) e gera nomes de restaurantes reais próximos.
+
+---
+
+### 3. Atrações Próximas (3–4 opções)
+
+**Para cada atração**:
+- Nome (ponto turístico ou local conhecido)
+- Distância aproximada
+- Tipo de atração (ex: "Praia", "Montanha", "Museu")
+- Descrição breve (por que vale a pena)
+
+**Exemplo**:
+```json
+{
+  "name": "Praia da Joaquina",
+  "distance": "Aprox. 18 km",
+  "description": "Famosa pelas dunas e pelas ondas para surf."
+}
+```
+
+---
+
+### 4. Serviços Essenciais
+
+**Categorias**: Farmácia, Supermercado, Hospital, Banco
+
+**Para cada serviço**:
+- Nome específico
+- Tipo (ex: "Farmácia 24h", "Supermercado")
+- Distância
+- Descrição breve
+
+**Exemplo**:
+```json
+{
+  "name": "Farmácia Catarinense",
+  "type": "pharmacy",
+  "distance": "Aprox. 300 metros",
+  "description": "Farmácia 24h na Av. Madre Benvenuta."
+}
+```
+
+---
+
+### 5. Dica Sazonal
+
+**Template**:
+```
+Em {mês}, as temperaturas ficam entre {min}-{max}°C.
+{recomendação específica}.
+```
+
+**Exemplos**:
+```
+Em maio, as temperaturas ficam entre 16°C e 22°C.
+Leve um agasalho para os dias mais frescos.
+
+Em dezembro, é verão. Protetor solar é essencial.
+Praias ficam lotadas nos fins de semana.
+
+Em julho, prepare-se para o frio (8-15°C).
+Aquecedores são básicos nas montanhas.
+```
+
+---
+
+## Processo de Geração
+
+### 1. Hóspede Acessa o Guia
+
+```
+Acessa /property/FLN001
+```
+
+### 2. Verificar se Guia Já Existe
+
+```typescript
+// Backend: slices/guidebook/guidebook.service.ts
+const existing = await prisma.guidebook.findUnique({
+  where: { propertyId: propertyId }
+});
+
+if (existing) {
+  // Retornar guia em cache ⚡ (menos de 100ms)
+  return existing;
+}
+
+// Não existe → gerar com IA
+```
+
+### 3. Chamar LLM (Groq)
+
+```typescript
+// Injetar contexto no prompt
+const systemPrompt = `
+Você é um assistente que gera guias de experiências para hóspedes.
+Contexto:
+- Endereço: ${property.address.street}, ${property.address.neighborhood}, ${property.address.city}, ${property.address.state}
+- Imóvel: ${property.name}
+- Tipo: ${property.property_type}
+
+Gere recomendações REAIS e verificáveis.
+Não invente endereços ou nomes fictícios.
+`;
+
+const response = await groq.generateObject({
+  model: 'openai/gpt-oss-120b',
+  system: systemPrompt,
+  prompt: `Gere um guia com restaurantes, atrações e serviços para o imóvel acima.`,
+  schema: GuidebookSchema // Zod
+});
+
+// response = { restaurants: [...], attractions: [...], essentials: [...], seasonal: "..." }
+```
+
+### 4. Persistir no Banco
+
+```typescript
+// Salvar para não regenerar a cada acesso
+await prisma.guidebook.create({
+  data: {
+    propertyId: propertyId,
+    restaurants: response.restaurants,
+    attractions: response.attractions,
+    essentials: response.essentials,
+    seasonal: response.seasonal,
+    createdAt: new Date()
+  }
+});
+```
+
+### 5. Exibir ao Hóspede
+
+```
+Frontend recebe JSON
+Renderiza Cards com restaurantes, atrações, serviços
+Skeleton desaparece, conteúdo aparece
+```
+
+---
+
+## Feedback Visual Durante a Geração
+
+### Skeleton Loading
+
+Enquanto a IA está gerando (primeira vez, 2-3 segundos):
+
+```
+┌─────────────────────────────────────┐
+│  ✨ Guia de Experiências             │
+│  [████████░░░░░░░░░░░] 40%           │
+│                                       │
+│  🍽️  Restaurantes Próximos           │
+│  ┌─────────────────────────┐         │
+│  │ [████████░░░░░░░░░░░░]  │ shimmer│
+│  │ [████████░░░░░░░░░░░░]  │ shimmer│
+│  └─────────────────────────┘         │
+└─────────────────────────────────────┘
+```
+
+**Implementação**:
+```typescript
+// Frontend: slices/guidebook/GuidebookSection.tsx
+if (loading) return <GuidebookSkeleton />;
+return <GuidebookContent guidebook={guidebook} />;
+```
+
+---
+
+## Contextualização por Endereço Real
+
+### Diferença: Estático vs Dinâmico
+
+#### ❌ Abordagem Estática (Antiga)
+
+```
+Usuário em FLN001 (Florianópolis) → sempre vê "Florianópolis"
+Usuário em GRM001 (Gramado) → também vê "Florianópolis" 🚫
+```
+
+Todos os imóveis têm o mesmo guia (inútil).
+
+#### ✅ Abordagem Dinâmica (Nova)
+
+```
+FLN001 (Florianópolis) → LLM recebe endereço Floripa → Recomendações de Floripa ✅
+GRM001 (Gramado) → LLM recebe endereço Gramado → Recomendações de Gramado ✅
+```
+
+Cada imóvel tem guia único.
+
+---
+
+## Persistência: Não Regenerar
+
+### Por Quê?
+
+1. **Performance**: Primeira geração leva 2-3s. Próximos acessos menos de 100ms (cache).
+2. **Consistência**: Hóspede vê sempre as mesmas recomendações (não muda a cada atualização da IA).
+3. **Custo**: Groq cobra por token. Reutilizar é mais barato.
+
+### Quando Regenerar?
+
+```typescript
+// Regra: Regenerar se guia for muito antigo
+const GUIDEBOOK_EXPIRY_DAYS = 30;
+
+if (existing && daysSince(existing.createdAt) < GUIDEBOOK_EXPIRY_DAYS) {
+  return existing; // Use cache
+}
+
+// Senão, regenerar
+const newGuidebook = await generateWithAI(...);
+```
+
+---
+
+## Tratamento de Erro
+
+### Se IA Falhar
+
+```
+Timeout (>5s) ou Erro de API:
+Exibir mensagem amigável: "Carregando guia de experiências... (às vezes demora)"
+Permitir retry do hóspede
+```
+
+**Implementação**:
+```typescript
+try {
+  const guidebook = await generateGuideWithAI(propertyId);
+} catch (error) {
+  if (error.code === 'TIMEOUT') {
+    return {
+      status: 'error',
+      message: 'Guia de experiências indisponível no momento. Tente novamente.'
+    };
+  }
+  throw error;
+}
+```
+
+---
+
+## Exemplo de Payload Completo
+
+```json
+{
+  "propertyId": 1,
+  "welcomeMessage": "Bem-vindo ao Apartamento Beira-Mar na Trindade! Aqui você encontra os melhores pontos de Floripa.",
+  "restaurants": [
+    {
+      "name": "Box 32",
+      "distance": "Aprox. 1,2 km",
+      "description": "Boteco tradicional de Florianópolis, famoso pelos petiscos."
+    },
+    {
+      "name": "Armazém Vieira",
+      "distance": "Aprox. 2,5 km",
+      "description": "Referência em frutos do mar desde 1958."
+    }
+  ],
+  "attractions": [
+    {
+      "name": "Praia da Joaquina",
+      "distance": "Aprox. 18 km",
+      "description": "Famosa pelas dunas e pelas ondas para surf."
+    }
+  ],
+  "essentials": [
+    {
+      "name": "Farmácia Catarinense",
+      "type": "pharmacy",
+      "distance": "Aprox. 300 metros",
+      "description": "Farmácia 24h na Av. Madre Benvenuta."
+    }
+  ],
+  "seasonalTip": "Em junho, as temperaturas ficam entre 16°C e 22°C. Leve um agasalho para os dias mais frescos."
+}
+```
+
+---
+
+## Critérios de Aceitação
+
+- [ ] **RF2-001**: Guia gerado automaticamente na primeira visualização
+- [ ] **RF2-002**: Conteúdo é contextualizado pelo endereço real (FLN001 ≠ GRM001)
+- [ ] **RF2-003**: 4–5 restaurantes com nome, distância, descrição
+- [ ] **RF2-004**: 3–4 atrações com informações relevantes
+- [ ] **RF2-005**: Serviços essenciais (farmácia, supermercado, hospital) inclusos
+- [ ] **RF2-006**: Dica sazonal é relevante para a época do ano
+- [ ] **RF2-007**: Guia é persistido (não regenerado a cada acesso)
+- [ ] **RF2-008**: Skeleton de loading exibido enquanto IA gera (2-3 segundos)
+- [ ] **RF2-009**: Tratamento de erro se IA falhar (timeout, limite de rate)
+
+---
+
+**Specs de Origem**: `feat/guidebook-generation`, `feat/frontend-property-page`
+
+---
+
+**Próximo**: Explore o [RF3 — Assistente Virtual (Chat)](/funcionalidades/assistente-virtual).

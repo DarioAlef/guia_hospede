@@ -1,0 +1,24 @@
+{
+  "name": "seazone-guia-docs",
+  "version": "1.0.0",
+  "description": "Documentação robusta do desafio técnico — Guia Digital do Hóspede (Seazone)",
+  "private": true,
+  "scripts": {
+    "dev": "mint dev --port 3000",
+    "dev:port": "mint dev --port ${PORT:-3000}",
+    "broken-links": "mint broken-links",
+    "preview": "mint dev",
+    "build": "mint build"
+  },
+  "devDependencies": {
+    "mint": "^1.0.0"
+  },
+  "keywords": [
+    "mintlify",
+    "documentation",
+    "seazone",
+    "guia-digital"
+  ],
+  "author": "Seazone Team",
+  "license": "MIT"
+}

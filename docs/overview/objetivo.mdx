@@ -1,0 +1,128 @@
+---
+title: Objetivo da Solução
+description: Missão, escopo e cobertura de necessidades do hóspede
+---
+
+# Objetivo da Solução
+
+## Missão
+
+Construir uma **versão digital personalizada do Guia do Hóspede** onde cada imóvel possui um **link único** com conteúdo customizado para aquela propriedade específica.
+
+### Exemplo Prático
+
+```
+Hóspede chega em: Florianópolis, SC
+Anfitrião compartilha: https://guia-hospede.seazone.com.br/FLN001
+Hóspede acessa: Guia completo do Apartamento Beira-Mar, com:
+  ✅ Dados do imóvel (fotos, capacidade, amenidades)
+  ✅ Instruções de acesso (WiFi, smart lock, estacionamento)
+  ✅ Regras da estadia (check-in/out, animais, fumantes)
+  ✅ Contato do anfitrião (telefone, endereço)
+  ✅ Restaurantes próximos (IA recomenda 4-5 opções reais em Florianópolis)
+  ✅ Chat para fazer perguntas: "Qual a senha do WiFi?"
+```
+
+## Cobertura de Necessidades
+
+A solução endereça **todas as necessidades do hóspede** quando chega em um imóvel:
+
+<Tabs>
+  <Tab title="Dados da Propriedade">
+    - Fotos do imóvel
+    - Nome, tipo e localização (cidade e estado)
+    - Capacidade: quartos, banheiros, hóspedes máximo
+    - Amenidades (WiFi, ar-condicionado, piscina, etc.)
+  </Tab>
+  <Tab title="Acesso e Logística">
+    - Rede e senha do WiFi
+    - Instruções de acesso (smart lock, keybox, etc.)
+    - Código de acesso (ex: 4521 para smart lock)
+    - Informações de estacionamento
+  </Tab>
+  <Tab title="Regras da Estadia">
+    - Horários de check-in e check-out
+    - Políticas: animais, fumantes, crianças, festas/eventos
+  </Tab>
+  <Tab title="Contato e Suporte">
+    - Nome e telefone do anfitrião
+    - Endereço completo do imóvel
+    - Chat 24/7 para dúvidas
+  </Tab>
+  <Tab title="Experiências Locais">
+    - Restaurantes próximos com descrições
+    - Atrações turísticas
+    - Serviços essenciais (farmácia, supermercado)
+    - Dicas sazonais
+  </Tab>
+</Tabs>
+
+## Requisitos Funcionais (3 Pilares)
+
+A solução se organiza em **3 requisitos funcionais** principais:
+
+### 1️⃣ Visualização do Guia (RF1)
+
+Hóspede acessa a URL única (ex: `/FLN001`) e vê todas as informações do imóvel de forma clara e organizada.
+
+- ✅ Dados do imóvel com fotos
+- ✅ Informações de acesso com instruções
+- ✅ Regras da estadia
+- ✅ Contato do anfitrião
+- ✅ Rota única por imóvel (código na URL)
+- ✅ 404 amigável para código inexistente
+- ✅ 100% responsivo (mobile-first)
+
+**Spec**: [feat/property-core](../arquitetura/vertical-slices.mdx), [feat/property-ui-redesign](../arquitetura/vertical-slices.mdx)
+
+### 2️⃣ Guia de Experiências Gerado por IA (RF2)
+
+Ao acessar o guia, a aplicação **gera automaticamente** um guia contextualizado sobre o bairro e a cidade do imóvel, usando IA.
+
+- ✅ Mensagem de boas-vindas personalizada
+- ✅ Restaurantes próximos: 4-5 opções reais
+- ✅ Atrações próximas: 3-4 opções reais
+- ✅ Serviços essenciais: farmácia, supermercado, hospital
+- ✅ Dica sazonal relevante para a época
+- ✅ **Contextualizado pelo endereço real** (FLN001 → Florianópolis; GRM001 → Gramado)
+- ✅ **Persistido no banco** (não regenerado a cada acesso)
+- ✅ Feedback visual (skeleton) enquanto gera
+
+**Spec**: [feat/guidebook-generation](../arquitetura/vertical-slices.mdx)
+
+### 3️⃣ Assistente Virtual com Chat (RF3)
+
+Hóspede pode conversar com um assistente que conhece o imóvel e responde perguntas em tempo real.
+
+- ✅ Chat em tempo real com streaming (SSE)
+- ✅ Respostas aparecem progressivamente
+- ✅ Contexto: dados do imóvel + guia de experiências
+- ✅ Exemplos de perguntas esperadas:
+  - *"Qual a senha do WiFi?"*
+  - *"Posso trazer meu cachorro?"*
+  - *"A que horas é o check-in?"*
+  - *"Que restaurantes tem perto?"*
+- ✅ Anti-alucinação: assistente só responde com dados reais
+- ✅ Sem invenção de informações
+
+**Spec**: [feat/chat-assistant](../arquitetura/vertical-slices.mdx)
+
+## Critérios de Sucesso
+
+Cada requisito funcional foi implementado para atender a critérios mensuráveis de qualidade:
+
+| Critério | RF1 | RF2 | RF3 |
+|----------|-----|-----|-----|
+| **Responsividade** | ✅ Mobile-first design | ✅ Renderiza em mobile | ✅ Chat usável no smartphone |
+| **Qualidade de IA** | N/A | ✅ Contextualizadas por endereço real | ✅ Respostas corretas, sem alucinação |
+| **Persistência** | ✅ Dados sempre disponíveis | ✅ Guia salvo, não regenerado | ✅ Conversa efêmera (ok) |
+| **Performance** | ✅ Carregamento rápido | ✅ Skeleton enquanto gera | ✅ Streaming progressivo |
+| **Tratamento de Erros** | ✅ 404 amigável | ✅ Fallback se IA falhar | ✅ Fallback se conexão cair |
+
+## Próximo Passo
+
+Veja como cada critério de avaliação do desafio foi endereçado na seção [Critérios de Avaliação](/overview/criterios-avaliacao).
+
+---
+
+**Escopo**: Documentação do Desafio Técnico da Seazone — 48 horas
