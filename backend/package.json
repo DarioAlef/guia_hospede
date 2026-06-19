@@ -11,7 +11,10 @@
     "db:generate": "prisma generate"
   },
   "dependencies": {
+    "@ai-sdk/groq": "^3.0.42",
     "@prisma/client": "^5.22.0",
+    "ai": "^6.0.208",
+    "dotenv": "^17.4.2",
     "fastify": "^4.29.1",
     "zod": "^3.25.76"
   },

@@ -25,4 +25,21 @@ model Property {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  guidebook Guidebook?
+}
+
+model Guidebook {
+  id         String   @id @default(cuid())
+  propertyId String   @unique
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  restaurants       Json
+  attractions       Json
+  essentialServices Json
+  seasonalTip       String
+  welcomeMessage    String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
