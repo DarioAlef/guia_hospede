@@ -1,4 +1,8 @@
+# AI
 .agent/
 .specify/
 .claude/
+specs/
+CLAUDE.md
+
 about_project.md
