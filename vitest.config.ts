@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     include: [
       "backend/src/**/*.test.ts",
+      "backend/prisma/**/*.test.ts",
       "frontend/src/**/*.test.ts",
       "frontend/src/**/*.test.tsx",
     ],
