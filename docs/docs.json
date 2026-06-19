@@ -1,0 +1,74 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Seazone — Guia Digital do Hóspede",
+  "description": "Documentação robusta do desafio técnico — solução de guia digital personalizado com IA",
+  "theme": "mint",
+  "colors": {
+    "primary": "#FF5A5F",
+    "light": "#FF7A7F",
+    "dark": "#0B192C"
+  },
+  "logo": {
+    "light": "/logo/seazone-light.svg",
+    "dark": "/logo.png",
+    "href": "https://seazone.com.br"
+  },
+  "favicon": "/favicon.svg",
+  "metadata": {
+    "og:image": "https://raw.githubusercontent.com/seazone/guia-hospede/main/docs/og-image.png",
+    "og:url": "https://guia-hospede-docs.railway.app",
+    "og:title": "Seazone — Guia Digital do Hóspede",
+    "og:description": "Documentação técnica completa do desafio de personalização de guias digitais com IA"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Visão Geral",
+        "pages": [
+          "index",
+          "overview/contexto",
+          "overview/objetivo",
+          "overview/criterios-avaliacao"
+        ]
+      },
+      {
+        "group": "Arquitetura",
+        "pages": [
+          "arquitetura/visao-geral",
+          "arquitetura/stack",
+          "arquitetura/vertical-slices"
+        ]
+      },
+      {
+        "group": "Funcionalidades",
+        "pages": [
+          "funcionalidades/visualizacao-guia",
+          "funcionalidades/guia-experiencias-ia",
+          "funcionalidades/assistente-virtual"
+        ]
+      },
+      {
+        "group": "Decisões Técnicas",
+        "pages": [
+          "decisoes-tecnicas/decisoes",
+          "decisoes-tecnicas/tratamento-erros"
+        ]
+      },
+      {
+        "group": "Guia de Uso",
+        "pages": [
+          "guia-de-uso/quickstart",
+          "guia-de-uso/variaveis-ambiente",
+          "guia-de-uso/testes",
+          "guia-de-uso/deploy-railway"
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "tagline": "Documentação do Desafio Técnico da Seazone — Guia Digital do Hóspede",
+    "socials": {
+      "github": "https://github.com/seazone/guia-hospede"
+    }
+  }
+}

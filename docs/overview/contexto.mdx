@@ -1,0 +1,91 @@
+---
+title: Contexto de Negócio
+description: O problema do folheto físico manual e a necessidade de personalização digital
+---
+
+# Contexto de Negócio
+
+## O Problema
+
+A Seazone gerencia mais de **3.000 propriedades no Brasil** — de apartamentos na praia a chalés na serra. Quando um hóspede chega em uma propriedade, o anfitrião entrega fisicamente um folheto com todas as informações da estadia:
+
+- 📱 Senha do WiFi
+- 🔑 Como acessar o imóvel
+- 📋 Regras da casa
+- 🗺️ O que fazer na região
+
+### Limitações do Processo Manual
+
+Este processo presenta vários problemas:
+
+<Card icon="exclamation-triangle">
+  **Manual e propenso a erros**: Cada anfitrião é responsável por preparar, imprimir e atualizar o folheto
+</Card>
+
+<Card icon="hourglass-end">
+  **Não escala**: Com 3.000 propriedades, manter folhetos atualizados é impraticável
+</Card>
+
+<Card icon="users">
+  **Experiência genérica**: Todos os hóspedes em um imóvel recebem o mesmo folheto, independentemente de quando chegam ou quais são suas necessidades
+</Card>
+
+<Card icon="globe">
+  **Sem contextualização**: Um hóspede em Gramado recebe as mesmas informações de bairro que um hóspede em Florianópolis
+</Card>
+
+## A Solução: Guia Digital Personalizado
+
+Em vez de um folheto físico, cada imóvel tem um **link único** que leva a um guia digital interativo e personalizado:
+
+```
+/FLN001  → Guia do Apartamento em Florianópolis
+/GRM001  → Guia do Chalé em Gramado
+```
+
+### Características da Solução
+
+1. **Acesso via link único** — Hóspede acessa o guia direto do smartphone usando um código QR ou URL personalizada
+
+2. **Informações completas do imóvel** — Dados, acesso, regras, contato do anfitrião
+
+3. **Guia de Experiências Gerado por IA** — Restaurantes, atrações e serviços próximos recomendados inteligentemente com base no endereço real da propriedade
+
+4. **Assistente Virtual 24/7** — Hóspede faz perguntas sobre o imóvel e recebe respostas em tempo real (streaming)
+
+### Por Que Isso Importa
+
+<CardGroup cols={2}>
+  <Card title="Para o Hóspede" icon="smile">
+    Experiência digital moderna, informações relevantes e personalizadas, assistente disponível para dúvidas
+  </Card>
+  <Card title="Para o Anfitrião" icon="home">
+    Menos esforço manual, informações sempre atualizadas, melhora no rating de experiência
+  </Card>
+  <Card title="Para a Seazone" icon="chart-line">
+    Diferencial competitivo, redução de suporte manual, dados sobre experiência do hóspede
+  </Card>
+  <Card title="Para a Marca" icon="palette">
+    Modernização da plataforma, alinhamento com expectativa de mercado, demonstração de inovação com IA
+  </Card>
+</CardGroup>
+
+## Contextualização com IA
+
+A parte mais inovadora da solução é o **uso de IA para personalizar e enriquecer** o guia de experiências. Em vez de manter uma base estática de restaurantes e atrações para cada cidade, o sistema:
+
+1. Recebe o **endereço real** do imóvel
+2. Consulta um **LLM** (Large Language Model via Groq) em tempo real
+3. Gera **recomendações contextualizadas** de restaurantes, atrações e serviços próximos
+4. **Persiste o resultado** no banco de dados para não regenerar a cada acesso
+5. Exibe um **feedback visual** (skeleton) enquanto a IA está gerando
+
+Isso garante que cada hóspede receba um guia único, relevante para a localização específica do imóvel onde está hospedado.
+
+## Próximo Passo
+
+Entenda agora qual é o **objetivo técnico** dessa solução na seção [Objetivo](/overview/objetivo).
+
+---
+
+**Referência**: Enunciado completo em [about_project.md](https://github.com/seazone/guia-hospede/blob/main/about_project.md)

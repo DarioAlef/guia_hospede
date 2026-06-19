@@ -1,0 +1,519 @@
+---
+title: Tratamento de Erros e Edge Cases
+description: Como a aplicação lida com falhas e cenários extremos
+---
+
+# Tratamento de Erros e Edge Cases
+
+Uma aplicação robusta não é aquela que nunca falha — é aquela que **falha graciosamente** e oferece feedback útil ao hóspede.
+
+---
+
+## 1. Código de Imóvel Inválido (404)
+
+### Cenário
+
+Hóspede acessa `/property/INVALID` ou `/property/XYZ123`
+
+### Comportamento Esperado
+
+❌ **Sem tratamento**:
+```
+Error: Property not found
+at PropertyService.getByCode (property.service.ts:42)
+TypeError: Cannot read property 'name' of undefined
+```
+
+✅ **Com tratamento**:
+```
+┌─────────────────────────────────────┐
+│  ❌ Imóvel não encontrado            │
+│                                      │
+│  O código "INVALID" não corresponde │
+│  a nenhum imóvel em nossa base.      │
+│                                      │
+│  Verifique se o código foi digitado │
+│  corretamente ou entre em contato.  │
+│                                      │
+│  [← Voltar para Home]               │
+└─────────────────────────────────────┘
+```
+
+### Implementação
+
+**Backend (Fastify)**:
+```typescript
+// slices/property/property.service.ts
+async getByCode(code: string): Promise<PropertyDTO> {
+  const property = await prisma.property.findUnique({
+    where: { code }
+  });
+  
+  if (!property) {
+    throw new NotFoundError(
+      `Property with code "${code}" not found`
+    );
+  }
+  
+  return this.mapToDTO(property);
+}
+
+// slices/property/property.routes.ts
+fastifyApp.get<{ Params: { code: string } }>(
+  '/properties/:code',
+  async (req, reply) => {
+    try {
+      const property = await propertyService.getByCode(req.params.code);
+      return reply.status(200).send(property);
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return reply.status(404).send({
+          error: 'NOT_FOUND',
+          message: error.message
+        });
+      }
+      return reply.status(500).send({
+        error: 'INTERNAL_SERVER_ERROR',
+        message: 'Algo deu errado. Tente novamente.'
+      });
+    }
+  }
+);
+```
+
+**Frontend (Next.js)**:
+```typescript
+// slices/property/hooks/useProperty.ts
+export function useProperty(code: string) {
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    fetchProperty(code)
+      .catch(err => {
+        if (err.status === 404) {
+          setError(new NotFoundError(
+            `Imóvel "${code}" não encontrado`
+          ));
+        } else {
+          setError(err);
+        }
+      });
+  }, [code]);
+
+  return { error };
+}
+
+// slices/property/PropertyPage.tsx
+export function PropertyPage({ code }: { code: string }) {
+  const { error } = useProperty(code);
+
+  if (error instanceof NotFoundError) {
+    return (
+      <ErrorPage
+        title="❌ Imóvel não encontrado"
+        message={error.message}
+        action={<Link href="/">← Voltar para Home</Link>}
+      />
+    );
+  }
+
+  // ... resto do componente
+}
+```
+
+### Validação
+
+- ✅ Código de 3-10 caracteres, apenas A-Z e 0-9
+- ✅ Mensagem amigável, não técnica
+- ✅ Sugestão clara (verificar código ou contatar)
+
+---
+
+## 2. Geração de Guia Falha (Timeout de IA)
+
+### Cenário
+
+LLM (Groq) demora >5s ou retorna erro (rate limit, timeout)
+
+### Comportamento Esperado
+
+❌ **Sem tratamento**:
+```
+Error: Groq API timeout (5000ms)
+at groq.generateObject (groq.service.ts:89)
+```
+
+✅ **Com tratamento**:
+```
+┌─────────────────────────────────────┐
+│  Guia de Experiências                │
+│                                      │
+│  ⏳ Carregando guide de experiências │
+│  (às vezes demora um pouco...)       │
+│                                      │
+│  [Recarregar]                        │
+└─────────────────────────────────────┘
+```
+
+Hóspede ainda consegue acessar dados do imóvel (nome, acesso, regras). O guia é "nice-to-have", não bloqueante.
+
+### Implementação
+
+**Backend (Fastify)**:
+```typescript
+// slices/guidebook/guidebook.service.ts
+async generateOrGetCached(
+  propertyId: number,
+  property: PropertyDTO
+): Promise<GuidebookDTO | null> {
+  const existing = await prisma.guidebook.findUnique({
+    where: { propertyId }
+  });
+
+  if (existing) return existing;
+
+  try {
+    // Timeout após 5s
+    const guidebook = await Promise.race([
+      this.generateWithAI(property),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new TimeoutError()), 5000)
+      )
+    ]);
+
+    // Salvar para próxima vez
+    await prisma.guidebook.create({
+      data: { propertyId, ...guidebook }
+    });
+
+    return guidebook;
+  } catch (error) {
+    if (error instanceof TimeoutError) {
+      console.warn(`Guidebook generation timed out for property ${propertyId}`);
+      return null; // Não bloqueia
+    }
+
+    if (error.code === 'RATE_LIMIT') {
+      // Tentar de novo em 30s
+      return null;
+    }
+
+    throw error;
+  }
+}
+```
+
+**Frontend (React)**:
+```typescript
+// slices/guidebook/hooks/useGuidebook.ts
+export function useGuidebook(propertyId: number) {
+  const [guidebook, setGuidebook] = useState<GuidebookDTO | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchGuidebook(propertyId)
+      .then(setGuidebook)
+      .catch(err => {
+        // Guia não disponível, mas não é fatal
+        console.warn('Guidebook unavailable:', err);
+        setError(new Error('Guia de experiências temporariamente indisponível'));
+      })
+      .finally(() => setLoading(false));
+  }, [propertyId]);
+
+  return { guidebook, error, loading };
+}
+
+// slices/guidebook/GuidebookSection.tsx
+export function GuidebookSection({ propertyId }: { propertyId: number }) {
+  const { guidebook, loading, error } = useGuidebook(propertyId);
+
+  if (loading) return <GuidebookSkeleton />;
+
+  if (error) return (
+    <div className="p-4 bg-yellow-50 rounded">
+      <p>⏳ Guia de experiências indisponível no momento.</p>
+      <button onClick={() => location.reload()}>Recarregar</button>
+    </div>
+  );
+
+  if (!guidebook) return null; // Não renderiza seção vazia
+
+  return <GuidebookContent guidebook={guidebook} />;
+}
+```
+
+### Validação
+
+- ✅ Timeout respeitado (5s máximo)
+- ✅ Fallback gracioso (página não quebra)
+- ✅ Mensagem não técnica ("carregando" vs "erro de IA")
+- ✅ Permitir retry sem recarregar página inteira
+
+---
+
+## 3. Anti-Alucinação no Chat
+
+### Cenário
+
+Hóspede pergunta algo que o assistente não deveria "saber"
+
+### Comportamento Esperado
+
+❌ **Sem proteção**:
+```
+Hóspede: "Qual é a senha bancária do anfitrião?"
+Assistente: "A senha bancária é 1234567" ❌ ALUCINAÇÃO
+```
+
+✅ **Com proteção**:
+```
+Hóspede: "Qual é a senha bancária do anfitrião?"
+Assistente: "Não tenho acesso a informações financeiras. 
+Posso ajudar com WiFi, acesso, regras ou restaurantes próximos?"
+```
+
+### Implementação
+
+**Técnica 1: Context Injection (Obrigatória)**
+
+```typescript
+// slices/chat/chat.service.ts
+const systemPrompt = `
+Você é um assistente do imóvel ${property.name}.
+
+CONTEXTO DO IMÓVEL (use APENAS isso):
+${JSON.stringify({
+  address: property.address,
+  rules: property.rules,
+  operational: property.operational,
+  amenities: property.amenities,
+  guidebook: guidebook
+})}
+
+RESTRIÇÕES CRÍTICAS:
+✅ Responda com dados REAIS acima
+❌ NÃO invente informações
+❌ NÃO alucine endereços, telefones, senhas
+✅ Se pergunta não está coberta, diga: "Desculpe, não tenho essa informação"
+
+EXEMPLOS DE RESPOSTAS CORRETAS:
+- P: WiFi? R: "A rede é X, senha é Y"
+- P: Check-in? R: "Horário é 15:00"
+- P: Banco? R: "Desculpe, não tenho essa informação"
+`;
+
+const response = await groq.streamText({
+  model: 'openai/gpt-oss-120b',
+  system: systemPrompt,
+  messages: conversationHistory,
+  temperature: 0.5 // Mais baixo = menos criatividade
+});
+```
+
+**Técnica 2: Exemplos (Few-Shot)**
+
+```typescript
+const examples = [
+  {
+    role: 'user',
+    content: 'Qual a senha do WiFi?'
+  },
+  {
+    role: 'assistant',
+    content: 'A rede é SeaHome_FLN001 e a senha é floripa2024.'
+  },
+  {
+    role: 'user',
+    content: 'Qual é o CPF do anfitrião?'
+  },
+  {
+    role: 'assistant',
+    content: 'Desculpe, não tenho acesso a informações pessoais do anfitrião.'
+  }
+];
+
+const messages = [...examples, ...userConversation];
+```
+
+**Técnica 3: Validação de Entrada**
+
+```typescript
+// Rejeitar perguntas suspeitas antes de enviar para IA
+const blockedPatterns = [
+  /cpf|cnpj|rg|identidade/i,
+  /password|senha|pin|token/i,
+  /cartão|banco|conta/i,
+  /email|endereço\s+pessoal/i
+];
+
+if (blockedPatterns.some(p => p.test(message))) {
+  return {
+    role: 'assistant',
+    content: 'Não tenho acesso a informações financeiras ou pessoais. Posso ajudar com dúvidas sobre o imóvel?'
+  };
+}
+```
+
+### Validação
+
+- ✅ LLM nunca inventa dados (context injection)
+- ✅ Exemplos treiam o modelo para rejeitar perguntas fora de scope
+- ✅ Bloqueio preventivo de padrões perigosos
+- ✅ Temperatura baixa (0.5) reduz criatividade
+
+---
+
+## 4. Conexão Perdida durante Chat
+
+### Cenário
+
+Hóspede está vendo resposta do assistente quando internet cai
+
+### Comportamento Esperado
+
+❌ **Sem tratamento**:
+```
+Error: Failed to fetch
+TypeError: Network request failed
+```
+
+✅ **Com tratamento**:
+```
+┌─────────────────────────────────────┐
+│  Assistente: A rede é SeaHome_FLN  │
+│  ... (mensagem incompleta)          │
+│                                      │
+│  ⚠️  Conexão perdida. Tente novamente│
+│  [Reconectar]                        │
+└─────────────────────────────────────┘
+```
+
+### Implementação
+
+**Frontend (React com Vercel AI SDK)**:
+```typescript
+// slices/chat/hooks/useChat.ts
+export function useChat() {
+  const { messages, input, handleSubmit } = useChat({
+    api: '/api/chat',
+    onError: (error) => {
+      if (error.message.includes('Failed to fetch')) {
+        showError('Conexão perdida. Verifique internet e tente novamente.');
+      } else {
+        showError('Erro ao processar mensagem. Tente novamente.');
+      }
+    }
+  });
+
+  return { messages, input, handleSubmit };
+}
+
+// slices/chat/ChatWidget.tsx
+export function ChatWidget() {
+  const { messages, input, handleSubmit, isLoading } = useChat();
+  const [connectionError, setConnectionError] = useState(false);
+
+  useEffect(() => {
+    window.addEventListener('offline', () => setConnectionError(true));
+    window.addEventListener('online', () => setConnectionError(false));
+  }, []);
+
+  if (connectionError) {
+    return (
+      <div className="p-4 bg-red-50">
+        <p>⚠️ Conexão perdida. Reconectando...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {messages.map(msg => (
+        <ChatMessage key={msg.id} message={msg} />
+      ))}
+      <form onSubmit={handleSubmit}>
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          disabled={isLoading || connectionError}
+          placeholder="Digite uma pergunta..."
+        />
+        <button disabled={isLoading || connectionError}>
+          {isLoading ? '...' : 'Enviar'}
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+### Validação
+
+- ✅ Mensagem clara quando offline
+- ✅ UI desabilitada (não envia pergunta vazia)
+- ✅ Detecção automática de reconexão (evento `online`)
+- ✅ Retenção de histórico de chat (continua de onde parou)
+
+---
+
+## 5. Validação de Input (Hóspede)
+
+### Cenários
+
+1. Código de imóvel muito longo: `/property/AAAAAAAAAAAAAAAA`
+2. Pergunta no chat muito longa: 10.000 caracteres
+3. Caracteres especiais inválidos: `/property/FLN@001`
+
+### Implementação
+
+**Backend (Zod)**:
+```typescript
+// slices/property/property.validator.ts
+const propertyCodeSchema = z.string()
+  .min(3, 'Código deve ter pelo menos 3 caracteres')
+  .max(10, 'Código deve ter no máximo 10 caracteres')
+  .regex(/^[A-Z0-9]+$/, 'Código deve conter apenas letras (A-Z) e números (0-9)');
+
+// slices/chat/chat.validator.ts
+const chatMessageSchema = z.object({
+  message: z.string()
+    .min(1, 'Mensagem não pode estar vazia')
+    .max(1000, 'Mensagem não pode exceder 1.000 caracteres'),
+  propertyCode: propertyCodeSchema
+});
+```
+
+**Frontend (JavaScript)**:
+```typescript
+// Validação otimista antes de enviar
+function validateInput(input: string): string | null {
+  if (!input.trim()) return 'Digite uma pergunta';
+  if (input.length > 1000) return 'Pergunta muito longa (máx 1.000 caracteres)';
+  return null;
+}
+```
+
+### Validação
+
+- ✅ Tamanho máximo respeitado
+- ✅ Caracteres válidos apenas
+- ✅ Mensagens de erro específicas
+- ✅ Validação em frontend (UX) + backend (segurança)
+
+---
+
+## Resumo de Estratégias
+
+| Erro | Estratégia | Impacto |
+|------|-----------|---------|
+| **404 Imóvel** | Página de erro customizada | Hóspede sabe o que fazer |
+| **Timeout de IA** | Fallback gracioso | Página não quebra |
+| **Alucinação** | Context injection + examples | Chat confiável |
+| **Conexão perdida** | Detecção offline | UX fluida |
+| **Input inválido** | Zod + validação frontend | Erros claros |
+
+---
+
+**Próximo**: Veja o [Guia de Uso](/guia-de-uso/quickstart) para rodar tudo localmente.

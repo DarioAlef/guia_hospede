@@ -1,0 +1,371 @@
+---
+title: Deploy no Railway
+description: Publicar frontend, backend, database e documentação
+---
+
+# Deploy no Railway
+
+Guia passo a passo para publicar a aplicação completa no Railway, incluindo os 4 serviços.
+
+---
+
+## Pré-requisitos
+
+1. **Conta Railway** — [https://railway.app](https://railway.app)
+   - Sign up gratuito (até $5/mês)
+   - Conectar GitHub (para auto-deploy)
+
+2. **Railway CLI** (opcional, para CLI-based deployment)
+   ```bash
+   npm install -g @railway/cli
+   railway login
+   ```
+
+3. **Repositório GitHub**
+   - Código push para branch `main` (ou branch padrão)
+
+---
+
+## Estrutura de Serviços no Railway
+
+A aplicação tem 4 serviços independentes:
+
+```
+Railway Project
+├── Frontend (Next.js)       Port: 3000 (público)
+├── Backend (Fastify)        Port: 4000 (privado, apenas para frontend)
+├── Database (PostgreSQL 16) Port: 5432 (privado)
+└── Docs (Mintlify)          Port: 3000 (público, domínio separado)
+```
+
+---
+
+## Passo 1: Criar Projeto no Railway
+
+### Via Dashboard Web
+
+1. Acessar [https://railway.app/dashboard](https://railway.app/dashboard)
+2. Clicar **"New Project"**
+3. Selecionar **"Deploy from GitHub repo"**
+4. Autorizar Railway acessar seu GitHub
+5. Selecionar repositório `seazone/guia-hospede`
+6. Clicar **"Deploy"**
+
+Railway automaticamente detecta `Dockerfile` em cada serviço.
+
+---
+
+## Passo 2: Configurar Database (PostgreSQL)
+
+### Via Dashboard
+
+1. No projeto Railway, clicar **"+ New"**
+2. Selecionar **"Add from Templates"** → **"PostgreSQL"**
+3. Aceitar defaults (PostgreSQL 16-latest)
+4. Railway injeta automaticamente `DATABASE_URL` em todos os serviços
+
+**Resultado**:
+```
+DATABASE_URL: postgresql://postgres:RANDOM_PASSWORD@db.railway.internal:5432/railway
+```
+
+**Observação**: URL interna (`db.railway.internal`) é usada entre serviços. URL pública é diferente.
+
+---
+
+## Passo 3: Configurar Backend
+
+### Selecionar o Serviço
+
+1. Dashboard → Seu projeto → **Backend** (ou clicar no container listado)
+
+### Verificar Builder
+
+- Settings → Build
+  - Deve ser **"Dockerfile"**
+  - Builder Command: (vazio, usa `docker build`)
+  - Root Directory: deixar vazio ou `backend/`
+
+### Adicionar Variáveis de Ambiente
+
+Settings → Variables:
+
+```
+NODE_ENV = production
+GROQ_API_KEY = sk-proj-YOUR_GROQ_KEY  (obter em https://console.groq.com)
+API_PORT = 8000  (ou deixar Railway decidir via $PORT)
+LOG_LEVEL = info
+CORS_ORIGIN = https://YOUR_FRONTEND_URL.railway.app,https://YOUR_DOCS_URL.railway.app
+```
+
+Railway injeta automaticamente:
+- `DATABASE_URL` (do serviço PostgreSQL)
+- `PORT` (porta dinâmica)
+
+### Deploy
+
+Clicar **"Deploy"** ou fazer push em `main` (auto-deploy).
+
+Aguardar ~3-5 minutos. Status deve ficar verde ✅.
+
+**Nota**: URL pública aparece em Settings → Networking → "Generate Domain"
+
+---
+
+## Passo 4: Configurar Frontend
+
+### Selecionar o Serviço
+
+1. Dashboard → Seu projeto → **Frontend**
+
+### Verificar Builder
+
+- Settings → Build
+  - Dockerfile: `frontend/Dockerfile`
+  - Root Directory: deixar vazio ou `frontend/`
+
+### Adicionar Variáveis de Ambiente
+
+Settings → Variables:
+
+```
+NEXT_PUBLIC_API_URL = https://backend-xxxx.railway.app
+NEXT_PUBLIC_APP_NAME = Seazone Guest Guide
+NEXT_PUBLIC_APP_VERSION = 1.0.0
+```
+
+⚠️ **Importante**: Obter URL do Backend gerada no Passo 3.
+
+### Deploy
+
+Clicar **"Deploy"**.
+
+Aguardar ~5-10 minutos (Next.js build leva mais tempo).
+
+---
+
+## Passo 5: Configurar Documentação (Mintlify)
+
+### Criar Novo Serviço
+
+1. Dashboard → **"+ New"** → **"Deploy from GitHub repo"**
+2. Selecionar mesmo repositório (seazone/guia-hospede)
+3. Especificar:
+   - Root Directory: `docs/`
+   - Builder: `Dockerfile` (usa `docs/Dockerfile`)
+
+### Variáveis de Ambiente
+
+Deixar vazio (Mintlify não precisa de variáveis obrigatórias).
+
+Opcionalmente:
+```
+PORT = 3000  (Railway injeta automaticamente via $PORT)
+```
+
+### Deploy
+
+Clicar **"Deploy"**.
+
+Aguardar ~2-3 minutos.
+
+### Acessar Documentação
+
+Após deploy bem-sucedido:
+- Settings → Networking → Gerar domínio público
+- Exemplo: `docs-xxxx.railway.app`
+- Acessar: `https://docs-xxxx.railway.app`
+
+---
+
+## Passo 6: Configurar Healthchecks (Opcional, Recomendado)
+
+Railway pode monitorar saúde dos serviços:
+
+### Para Backend (Fastify)
+
+1. Backend → Settings → Health Check
+2. HTTP Path: `/health`
+3. Interval: `30s`
+4. Timeout: `5s`
+
+Fastify deve responder com status 200:
+```typescript
+// backend/src/main.ts
+fastifyApp.get('/health', async (request, reply) => {
+  return reply.send({ status: 'ok' });
+});
+```
+
+### Para Frontend (Next.js)
+
+1. Frontend → Settings → Health Check
+2. HTTP Path: `/`
+3. Interval: `30s`
+
+---
+
+## Passo 7: Verificar Tudo Funciona
+
+### 1. Acessar Frontend
+
+```
+https://frontend-xxxx.railway.app
+```
+
+Deve exibir home page.
+
+### 2. Acessar Property Page
+
+```
+https://frontend-xxxx.railway.app/property/FLN001
+```
+
+Deve exibir:
+- ✅ Dados do imóvel
+- ✅ Guia de experiências (pode levar 2-3s na primeira vez)
+- ✅ Chat funcional
+
+### 3. Testar Chat
+
+No property page, fazer pergunta:
+```
+"Qual a senha do WiFi?"
+```
+
+Assistente deve responder: "A rede é SeaHome_FLN001 e a senha é floripa2024."
+
+### 4. Acessar Documentação
+
+```
+https://docs-xxxx.railway.app
+```
+
+Deve exibir Mintlify com navegação completa.
+
+### 5. Verificar Logs
+
+Dashboard → Serviço → **Logs**:
+- Procurar por erros (qualquer erro ❌)
+- Verificar última linha (deve ser "listening" ou "ready")
+
+Se houver erro:
+```
+Error: DATABASE_URL is not set
+```
+
+→ Adicionar variável de ambiente (Passo 3)
+
+---
+
+## Troubleshooting
+
+### Build Fails
+
+**Erro**: `docker build` não encontra `Dockerfile`
+
+**Solução**:
+1. Verificar Settings → Root Directory (deixar vazio para detectar automático)
+2. Verificar que `frontend/Dockerfile` e `backend/Dockerfile` existem
+3. Re-deploy
+
+### Frontend não consegue chamar Backend
+
+**Erro**: `Failed to fetch from /api/...`
+
+**Solução**:
+1. Frontend → Variables → Verificar `NEXT_PUBLIC_API_URL` está correto
+2. Backend → Networking → Copiar domínio (ex: `https://backend-xxxx.railway.app`)
+3. Frontend → Variables → Atualizar `NEXT_PUBLIC_API_URL` com URL do backend
+4. Re-deploy frontend
+
+### Chat não responde
+
+**Erro**: Pergunta não retorna resposta (timeout)
+
+**Solução**:
+1. Backend → Variables → Verificar `GROQ_API_KEY` está preenchida
+2. Verificar que chave é válida em [console.groq.com](https://console.groq.com)
+3. Backend → Logs → Procurar por erros de Groq API
+4. Se erro de rate limit: aguardar 1 minuto e tentar novamente
+
+### Database Connection Error
+
+**Erro**: `ECONNREFUSED: connect ECONNREFUSED 127.0.0.1:5432`
+
+**Solução**:
+1. Verificar que PostgreSQL service existe (Dashboard → ver se verde)
+2. Backend → Variables → Verificar que `DATABASE_URL` está setada
+3. Se não tiver, Railway não a injetou automaticamente:
+   - Deletar PostgreSQL service
+   - Criar novo via "Add from Templates" → PostgreSQL
+4. Backend → Logs → Verificar que DATABASE_URL foi recebida
+
+### Mintlify não carrega
+
+**Erro**: Documentação retorna erro 404 ou timeout
+
+**Solução**:
+1. Docs → Logs → Procurar por erros
+2. Verificar que `docs/Dockerfile` tem `mint dev --port $PORT --host 0.0.0.0`
+3. Verificar que `docs/docs.json` é válido JSON
+4. Re-deploy
+
+---
+
+## URLs Finais
+
+Após todos os 4 serviços deployed com sucesso:
+
+```
+🌐 Frontend:       https://frontend-xxxx.railway.app
+🔌 Backend API:    https://backend-xxxx.railway.app (privado para frontend)
+📚 Documentação:   https://docs-xxxx.railway.app
+🗄️  Database:      (privado, railway.internal)
+```
+
+---
+
+## Domínios Customizados (Opcional)
+
+Para usar domínio próprio (ex: `guia.seazone.com.br`):
+
+1. Railway → Serviço → Settings → Networking → Custom Domain
+2. Adicionar `guia.seazone.com.br`
+3. Railway fornece CNAME record:
+   ```
+   CNAME guia.seazone.com.br → gateway.railway.app
+   ```
+4. Adicionar em sua zona DNS (Cloudflare, AWS Route53, etc.)
+5. Aguardar ~5 minutos para propagar
+
+---
+
+## Escalabilidade Futura
+
+Se precisar escalar:
+
+1. **Mais Instâncias**: Railway → Serviço → Settings → Replicas: `2` (ou mais)
+2. **Mais Poder**: Settings → Instance Type: "Standard" → "Pro"
+3. **Mais BD**: Upgrade PostgreSQL tier
+
+Tudo sem redeploymant (hot scaling).
+
+---
+
+## Monitoramento
+
+Railway oferece:
+- ✅ Logs em tempo real
+- ✅ Métricas (CPU, memória, network)
+- ✅ Alertas (opcional, plano pago)
+
+Dashboard → Seu projeto → Visualizar grafos de performance.
+
+---
+
+**Pronto!** Sua aplicação está live em produção. Compartilhe as URLs com os avaliadores.
+
+---
+
+**Próximo**: Volte para [Quickstart](/guia-de-uso/quickstart) para mais detalhes sobre local development.

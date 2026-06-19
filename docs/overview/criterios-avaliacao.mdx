@@ -1,0 +1,211 @@
+---
+title: Critérios de Avaliação
+description: Como a solução endereça cada critério de avaliação do desafio
+---
+
+# Critérios de Avaliação
+
+Esta seção mapeia como a solução atende a cada um dos 6 critérios de avaliação da Seazone.
+
+## 1️⃣ Produto — Solução Clara e Intuitiva
+
+**Critério**: A aplicação resolve o problema do hóspede de forma clara e intuitiva.
+
+### Como foi endereçado
+
+<Tabs>
+  <Tab title="RF1 — Visualização">
+    Dados organizados em seções claras: Imóvel → Acesso → Regras → Contato
+    - Interface clean (Tailwind CSS)
+    - Ícones e visuais para melhor escaneabilidade
+    - Fluxo de leitura top-down, mobile-first
+  </Tab>
+  <Tab title="RF2 — Experiências">
+    Recomendações agrupadas por categoria: Restaurantes, Atrações, Serviços
+    - Cards com imagem, nome, distância e descrição
+    - Contextualizado: hóspede vê opções reais da sua região
+  </Tab>
+  <Tab title="RF3 — Chat">
+    Interface familiar de chat, resposta progressiva
+    - Perguntas simples, respostas diretas
+    - Assistente conhece o imóvel (não alucina)
+  </Tab>
+</Tabs>
+
+**Evidência**: Páginas [Visualização do Guia](/funcionalidades/visualizacao-guia), [Guia de Experiências](/funcionalidades/guia-experiencias-ia), [Assistente Virtual](/funcionalidades/assistente-virtual)
+
+---
+
+## 2️⃣ Integração com IA — Qualidade e Confiabilidade
+
+**Critério**: Qualidade do prompt, coerência com endereço real, funcionamento correto, tratamento de falhas.
+
+### Como foi endereçado
+
+<Card icon="target">
+  **Qualidade do Prompt**: System instructions reforçam contexto do imóvel, exemplos de perguntas/respostas esperadas, restrições contra alucinação
+</Card>
+
+<Card icon="map-pin">
+  **Coerência com Endereço**: LLM recebe endereço real (rua, bairro, cidade, estado) e gera recomendações relevantes localmente verificáveis
+</Card>
+
+<Card icon="check-circle">
+  **Funcionamento Correto**: Testes de chat com perguntas-exemplo (WiFi, animais, check-in, restaurantes) validam respostas corretas
+</Card>
+
+<Card icon="shield">
+  **Tratamento de Falhas**: 
+  - Se geração de guia falha: exibir mensagem amigável, não quebrar página
+  - Se chat timeout: exibir aviso, permitir retry
+  - Se LLM retorna alucinação: system prompt reforça dados reais
+</Card>
+
+**Evidência**: Páginas [Guia de Experiências](/funcionalidades/guia-experiencias-ia) (geração), [Assistente Virtual](/funcionalidades/assistente-virtual) (chat), [Tratamento de Erros](/decisoes-tecnicas/tratamento-erros)
+
+---
+
+## 3️⃣ Responsividade — Mobile-First, Desktop de Alta Qualidade
+
+**Critério**: Layout adaptado e de alta qualidade em mobile e desktop.
+
+### Como foi endereçado
+
+<Tabs>
+  <Tab title="Design System">
+    Tokens de design Seazone (cores coral `#FF5A5F`, navy `#0B192C`)
+    - Aplicados em Tailwind CSS 3.x
+    - Paleta coerente em todas as páginas
+  </Tab>
+  <Tab title="Mobile-First">
+    Páginas desenvolvidas começando por tela estreita (375px)
+    - Botões e ícones com touch-friendly tamanho (48px+)
+    - Tipografia legível sem zoom
+    - Espaçamento adequado para dedos
+  </Tab>
+  <Tab title="Desktop">
+    Escalamento gracioso para telas largas (1920px+)
+    - Grid layouts que aproveitam espaço
+    - Multi-coluna onde apropriado (ex: cards de restaurantes)
+    - Sem quebra de layout
+  </Tab>
+  <Tab title="Testado">
+    Testes E2E (Playwright) validam responsividade em múltiplas breakpoints
+    - Verifica se conteúdo não fica cortado
+    - Valida que menu funciona em telas pequenas
+  </Tab>
+</Tabs>
+
+**Evidência**: Specs [feat/property-ui-redesign](/arquitetura/vertical-slices.mdx), testes E2E em [Testes](/guia-de-uso/testes.mdx)
+
+---
+
+## 4️⃣ Qualidade de Código — Clean Code, TypeScript Estrito, Testes
+
+**Critério**: Testes automatizados, TypeScript estrito, separação de responsabilidades, tratamento de erros, edge cases.
+
+### Como foi endereçado
+
+<Card icon="code">
+  **TypeScript Estrito**: `strict: true` em tsconfig.json, tipos explícitos para todas as funções, Zod para validação de dados
+</Card>
+
+<Card icon="layers">
+  **Separação de Responsabilidades** (Vertical Slices):
+  - **property**: Dados e UI do imóvel
+  - **guidebook**: Geração de conteúdo por IA
+  - **chat**: Assistente virtual com streaming
+  - Cada slice tem seu próprio serviço, controlador, tipos
+</Card>
+
+<Card icon="check">
+  **Testes Automatizados**:
+  - **Unitários** (Vitest): Serviços, utilities, formatadores
+  - **E2E** (Playwright): Fluxos completos (acessar imóvel, ver guia, fazer pergunta)
+  - Cobertura de happy path + edge cases (404, timeout, erro de IA)
+</Card>
+
+<Card icon="alert">
+  **Tratamento de Erros**:
+  - Validação de entrada (Zod) na fronteira
+  - Fallback em caso de timeout de IA
+  - 404 customizado para imóvel não encontrado
+  - Erro de streaming no chat capturado e tratado
+</Card>
+
+**Evidência**: Specs [feat/property-core](/arquitetura/vertical-slices.mdx), [feat/chat-assistant](/arquitetura/vertical-slices.mdx); Testes em [Testes](/guia-de-uso/testes.mdx)
+
+---
+
+## 5️⃣ Organização — Estrutura Clara, Decisões Documentadas
+
+**Critério**: Estrutura do projeto, clareza do README, decisões técnicas documentadas, coerência entre arquitetura e problema.
+
+### Como foi endereçado
+
+<Card icon="folder-tree">
+  **Estrutura do Projeto**: Monorepo com pasta por serviço (frontend, backend, docs), vertical slices dentro do backend
+</Card>
+
+<Card icon="book">
+  **README Completo**: Entender problema, como rodar localmente, estrutura de pastas, stack tecnológico
+</Card>
+
+<Card icon="lightbulb">
+  **Decisões Documentadas**: Esta documentação (Mintlify MDX) + arquivo research.md em specs/ explicam "porquê" de cada escolha
+</Card>
+
+<Card icon="link">
+  **Rastreabilidade**: Cada página de documentação referencia a spec/fase de origem (ex: "RF1 em feat/property-core")
+</Card>
+
+**Evidência**: Esta documentação que você está lendo + [Decisões Técnicas](/decisoes-tecnicas/decisoes.mdx)
+
+---
+
+## 6️⃣ Testes — Unitários e E2E, Alta Cobertura
+
+**Critério**: Presença de testes unitários e/ou de integração e E2E (diferencial).
+
+### Como foi endereçado
+
+<Tabs>
+  <Tab title="Testes Unitários">
+    **Vitest** para funções puras e serviços
+    - Testes de formatadores (endereço, distância)
+    - Testes de validação (Zod)
+    - Mock de banco de dados para serviços
+  </Tab>
+  <Tab title="Testes E2E">
+    **Playwright** para fluxos completos do hóspede
+    - Acessar `/property/FLN001` → dados carregam
+    - Ver guia de experiências → restaurantes aparecem
+    - Chat: fazer pergunta → receber resposta com streaming
+    - Edge: Acessar `/property/INVALID` → 404 amigável
+  </Tab>
+  <Tab title="Cobertura">
+    Testes cobrem:
+    - Happy path (fluxo normal)
+    - Edge cases (código inválido, timeout de IA, limite de caracteres no chat)
+    - Erros (falha de banco, falha de IA, conexão perdida)
+  </Tab>
+</Tabs>
+
+**Evidência**: Página [Como Rodar Testes](/guia-de-uso/testes.mdx), exemplos de testes em repos (Vitest + Playwright)
+
+---
+
+## Mapa Resumido
+
+| Critério | Páginas Principais | Specs de Origem |
+|----------|-------------------|-----------------|
+| **Produto** | [Funcionalidades](/funcionalidades/) | feat/property-core, feat/guidebook-generation, feat/chat-assistant |
+| **IA** | [Guia Experiências](/funcionalidades/guia-experiencias-ia), [Chat](/funcionalidades/assistente-virtual) | feat/guidebook-generation, feat/chat-assistant, research.md |
+| **Responsividade** | [UI Redesign](/arquitetura/vertical-slices.mdx) | feat/property-ui-redesign |
+| **Código** | [Stack](/arquitetura/stack), [Vertical Slices](/arquitetura/vertical-slices) | feat/property-core, feat/infra-setup |
+| **Organização** | [Esta documentação](/) | plan.md, data-model.md, decisões técnicas |
+| **Testes** | [Guia de Testes](/guia-de-uso/testes) | Testes em repos (Vitest + Playwright) |
+
+---
+
+**Próximo Passo**: Explore a seção [Arquitetura](/arquitetura/visao-geral) para entender como tudo se conecta tecnicamente.

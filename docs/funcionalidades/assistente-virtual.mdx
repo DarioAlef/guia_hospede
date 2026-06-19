@@ -1,0 +1,475 @@
+---
+title: RF3 — Assistente Virtual (Chat)
+description: Requisito Funcional 3 — chat em tempo real com streaming progressivo
+---
+
+# Requisito Funcional 3 — Assistente Virtual (Chat)
+
+## Descrição
+
+O hóspede pode conversar em tempo real com um assistente virtual que **conhece o imóvel** e responde perguntas progressivamente (streaming). O assistente tem acesso aos dados do imóvel e ao guia de experiências gerado por IA, garantindo respostas corretas e evitando alucinações.
+
+## O Que o Hóspede Vê
+
+### Interface de Chat
+
+```
+┌─────────────────────────────────────────────┐
+│  💬 Assistente Virtual — Faça uma Pergunta  │
+├─────────────────────────────────────────────┤
+│                                              │
+│  Assistente: Olá! Sou o assistente do       │
+│  Apartamento Beira-Mar. Como posso ajudar? │
+│                                              │
+│  Você: Qual a senha do WiFi?               │
+│                                              │
+│  Assistente: A rede é SeaHome_FLN001 e    │
+│  a senha é floripa2024.                    │
+│                                              │
+│  Você: Posso trazer meu cachorro?          │
+│                                              │
+│  Assistente: Infelizmente este imóvel      │
+│  não permite animais de estimação.          │
+│                                              │
+├─────────────────────────────────────────────┤
+│  [Caixa de entrada com "Digite aqui..."]   │
+│  [Botão Enviar]                             │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## Exemplos de Perguntas Esperadas
+
+O assistente DEVE responder corretamente a:
+
+### 1. "Qual a senha do WiFi?"
+
+**Resposta esperada** (FLN001):
+```
+A rede é SeaHome_FLN001 e a senha é floripa2024.
+```
+
+**Dados usados**: `property.operational.wifi_network`, `property.operational.wifi_password`
+
+---
+
+### 2. "Posso trazer meu cachorro?"
+
+**Resposta esperada** (FLN001):
+```
+Infelizmente este imóvel não permite animais de estimação.
+```
+
+**Resposta alternativa** (GRM001):
+```
+Sim, animais de estimação são bem-vindos! 
+Mas procure cuidar das amenidades.
+```
+
+**Dados usados**: `property.rules.allow_pet`
+
+---
+
+### 3. "A que horas posso fazer check-in?"
+
+**Resposta esperada** (FLN001):
+```
+O check-in pode ser feito a partir das 15:00.
+```
+
+**Dados usados**: `property.rules.check_in_time`
+
+---
+
+### 4. "Que restaurantes tem perto?"
+
+**Resposta esperada**:
+```
+Perto de você tem:
+- Box 32 (aprox. 1,2 km) — Boteco tradicional
+- Armazém Vieira (aprox. 2,5 km) — Frutos do mar
+
+Ambos são ótimas opções para jantar!
+```
+
+**Dados usados**: `guidebook.restaurants`
+
+---
+
+### 5. Perguntas Diversas
+
+O assistente pode também responder a:
+- "Como acesso o imóvel?" → `property.operational.property_access_instructions`
+- "Qual a política de fumantes?" → `property.rules.smoking_permitted`
+- "Qual o endereço?" → `property.address`
+- "Como chego à praia mais próxima?" → `guidebook.attractions`
+
+---
+
+## Fluxo de Chat em Tempo Real
+
+### 1. Hóspede Digita Pergunta
+
+```
+Input: "Qual a senha do WiFi?"
+```
+
+### 2. Frontend Envia Pedido (SSE)
+
+```typescript
+// slices/chat/services/chat.api.ts
+const response = await fetch('/api/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    message: "Qual a senha do WiFi?",
+    propertyCode: "FLN001",
+    conversationHistory: [
+      { role: 'user', content: '...' },
+      { role: 'assistant', content: '...' }
+    ]
+  })
+});
+
+// Recebe stream SSE
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+let fullResponse = '';
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  fullResponse += chunk;
+  // Renderizar progressivamente
+}
+```
+
+### 3. Backend Processa com IA (Streaming)
+
+```typescript
+// slices/chat/chat.routes.ts
+fastifyApp.post('/chat', async (req, reply) => {
+  const { message, propertyCode, conversationHistory } = req.body;
+
+  // 1. Buscar contexto do imóvel
+  const property = await propertyService.getByCode(propertyCode);
+  const guidebook = await guideBookService.getByPropertyId(property.id);
+
+  // 2. Injetar contexto no system prompt
+  const systemPrompt = `
+    Você é um assistente amigável e prestativo do imóvel ${property.name}.
+    
+    CONTEXTO DO IMÓVEL:
+    - Endereço: ${JSON.stringify(property.address)}
+    - Regras: ${JSON.stringify(property.rules)}
+    - Acesso: ${JSON.stringify(property.operational)}
+    - Contato: ${JSON.stringify(property.host)}
+    
+    GUIA DE EXPERIÊNCIAS:
+    - Restaurantes: ${JSON.stringify(guidebook.restaurants)}
+    - Atrações: ${JSON.stringify(guidebook.attractions)}
+    
+    INSTRUÇÕES:
+    ✅ Responda APENAS com informações REAIS do imóvel acima
+    ❌ NÃO invente informações que não estão no contexto
+    ❌ NÃO alucine endereços, números de telefone ou senhas
+    ✅ Se não souber, diga: "Desculpe, não tenho essa informação"
+    ✅ Seja amigável, conciso e direto
+  `;
+
+  // 3. Stream com IA (Groq)
+  const stream = await groq.streamText({
+    model: 'openai/gpt-oss-120b',
+    system: systemPrompt,
+    messages: conversationHistory, // Contexto da conversa
+    temperature: 0.7
+  });
+
+  // 4. Pipar stream para cliente (SSE)
+  reply.type('text/event-stream');
+  reply.header('Connection', 'keep-alive');
+  reply.header('Cache-Control', 'no-cache');
+
+  for await (const chunk of stream) {
+    reply.raw.write(`data: ${JSON.stringify({ token: chunk.text })}\n\n`);
+  }
+
+  reply.raw.end();
+});
+```
+
+### 4. Frontend Renderiza Progressivamente
+
+```
+┌────────────────────────────────────┐
+│ Assistente: A rede é              │ (1ª token aparece)
+│                                    │
+│ Assistente: A rede é SeaHome      │ (2º token aparece)
+│                                    │
+│ Assistente: A rede é SeaHome_FLN │ (3º token aparece)
+│                                    │
+│ Assistente: A rede é SeaHome_FL   │ (Assim vai...)
+│ a senha é floripa2024.            │ (até completar)
+└────────────────────────────────────┘
+```
+
+**User Experience**: Hóspede vê resposta sendo digitada em tempo real (mais natural, menos "robo").
+
+---
+
+## Contexto Injetado no Prompt
+
+### System Instructions (Crítico para Anti-Alucinação)
+
+```
+Você é um assistente amigável do imóvel [NOME].
+
+CONTEXTO REAL (use APENAS isso):
+- Dados do imóvel: [JSON]
+- Guia de experiências: [JSON]
+
+RESTRIÇÕES:
+✅ Responda com dados REAIS acima
+❌ NÃO invente
+❌ NÃO alucine
+✅ Se pergunta não está coberta: "Não tenho essa informação"
+
+EXEMPLOS DE RESPOSTAS CORRETAS:
+- P: Qual a senha? R: "A rede é X, senha é Y"
+- P: Animais? R: "Não permitidos" ou "Sim, bem-vindos"
+- P: Check-in? R: "A partir das 15:00"
+```
+
+### Contexto de Conversa
+
+```typescript
+// Histórico da conversa é mantido
+conversationHistory: [
+  {
+    role: 'user',
+    content: 'Qual a senha do WiFi?'
+  },
+  {
+    role: 'assistant',
+    content: 'A rede é SeaHome_FLN001 e a senha é floripa2024.'
+  },
+  {
+    role: 'user',
+    content: 'Posso levar meu cachorro?'
+  }
+  // → Assistente sabe da pergunta anterior (contexto)
+]
+```
+
+---
+
+## Streaming Progressivo (SSE)
+
+### Por Quê Streaming?
+
+1. **Latência Percebida**: Usuário vê resposta começar em ~300ms, não precisa aguardar 3-5s completos
+2. **UX Natural**: Parece um humano digitando, não uma resposta "da máquina"
+3. **Cancelamento**: Se hóspede sair da página, IA para (não desperdiça tokens)
+
+### Implementação no Frontend
+
+```typescript
+// slices/chat/hooks/useChat.ts (Vercel AI SDK)
+import { useChat } from '@ai-sdk/react';
+
+export function useChat() {
+  const { messages, input, handleInputChange, handleSubmit } = useChat({
+    api: '/api/chat',
+    body: {
+      propertyCode: 'FLN001'
+    }
+  });
+
+  return {
+    messages, // [{ role: 'user', content: '...' }, { role: 'assistant', content: '...' }]
+    input,
+    handleInputChange,
+    handleSubmit,
+    isLoading: false // Vercel SDK gerencia isso
+  };
+}
+```
+
+---
+
+## Anti-Alucinação
+
+### Técnica 1: Context Injection (Obrigatório)
+
+```typescript
+// Injetar dados reais no system prompt
+const systemPrompt = `
+  Contexto do imóvel:
+  ${JSON.stringify(property)}
+  ${JSON.stringify(guidebook)}
+  
+  Use APENAS essas informações. Não invente.
+`;
+```
+
+### Técnica 2: Exemplos (Few-Shot)
+
+```typescript
+const examples = [
+  {
+    role: 'user',
+    content: 'Qual a senha do WiFi?'
+  },
+  {
+    role: 'assistant',
+    content: 'A rede é SeaHome_FLN001 e a senha é floripa2024.'
+  },
+  {
+    role: 'user',
+    content: 'Qual a temperatura?'
+  },
+  {
+    role: 'assistant',
+    content: 'Desculpe, não tenho informação sobre temperatura. Você pode consultar um aplicativo de clima.'
+  }
+];
+
+const messages = [...examples, ...userConversation];
+```
+
+### Técnica 3: Guardrail de Entrada
+
+```typescript
+// Validar pergunta antes de enviar
+const validInputPatterns = [
+  /wifi|senha/i,
+  /cachorro|animais|pet/i,
+  /check.?in|entrada/i,
+  /restaurante|comida/i,
+  // ... mais patterns
+];
+
+if (!validInputPatterns.some(p => p.test(message))) {
+  // Pergunta fora do escopo → resposta pré-definida
+  return "Minha especialidade é responder sobre este imóvel. Posso ajudar com WiFi, regras, check-in, restaurantes próximos?";
+}
+```
+
+### Resultado
+
+```
+❌ Pergunta: "Qual a temperatura em Marte?"
+✅ Resposta: "Desculpe, não tenho informação sobre Marte. Posso ajudar com dúvidas sobre o imóvel?"
+
+❌ Pergunta: "Qual é a senha bancária do anfitrião?"
+✅ Resposta: "Não tenho acesso a informações financeiras. Posso ajudar com WiFi, acesso, regras ou recomendações locais?"
+
+✅ Pergunta: "Qual a senha do WiFi?"
+✅ Resposta: "A rede é SeaHome_FLN001 e a senha é floripa2024."
+```
+
+---
+
+## Tratamento de Erro
+
+### Timeout (>5 segundos)
+
+```typescript
+try {
+  const response = await fetch('/api/chat', {
+    signal: AbortSignal.timeout(5000) // 5s limit
+  });
+} catch (error) {
+  if (error.name === 'AbortError') {
+    return "A resposta está demorando. Tente novamente ou entre em contato com suporte.";
+  }
+}
+```
+
+### Conexão Perdida
+
+```typescript
+// Stream foi interrompido
+if (reader.closed) {
+  showError("Conexão perdida. Verifique internet e tente novamente.");
+}
+```
+
+### Limite de Rate (muitas perguntas)
+
+```
+POST /api/chat com 100+ requisições em 1 minuto
+→ Status 429 (Too Many Requests)
+→ Mostrar: "Aguarde um momento antes de fazer outra pergunta"
+```
+
+---
+
+## Exemplo Completo: Pergunta → Resposta
+
+### Entrada
+
+```
+Hóspede: "A que horas é o check-in? Posso entrar mais cedo?"
+Property Code: FLN001
+```
+
+### Processamento
+
+```typescript
+// 1. Buscar property + guidebook
+Property:
+  - rules.check_in_time: "15:00"
+  - host.name: "Ana Paula"
+  - host.phone: "+5548991234567"
+
+// 2. Injetar contexto
+systemPrompt = `
+Você é assistente do Apartamento Beira-Mar (FLN001).
+Dados: { rules: { check_in_time: "15:00", ... }, host: { ... } }
+`;
+
+// 3. Stream com IA
+"O check-in pode ser feito a partir das 15:00. Se precisa entrar mais cedo, 
+recomendo entrar em contato com Ana Paula pelo telefone +5548991234567."
+
+// 4. Renderizar progressivamente
+"O check-in"
+"O check-in pode"
+"O check-in pode ser"
+... (completa em ~1.5s)
+```
+
+### Saída
+
+```
+Assistente: O check-in pode ser feito a partir das 15:00. 
+Se precisa entrar mais cedo, recomendo entrar em contato com 
+Ana Paula pelo telefone +5548991234567.
+```
+
+---
+
+## Critérios de Aceitação
+
+- [ ] **RF3-001**: Chat renderiza e é funcional na página
+- [ ] **RF3-002**: Pergunta sobre WiFi → resposta correta com SSID e senha
+- [ ] **RF3-003**: Pergunta sobre animais → resposta correta (sim/não conforme imóvel)
+- [ ] **RF3-004**: Pergunta sobre check-in → resposta com hora correta
+- [ ] **RF3-005**: Pergunta sobre restaurantes → listar opções do guia
+- [ ] **RF3-006**: Streaming progressivo (tokens aparecem em tempo real)
+- [ ] **RF3-007**: Histórico de conversa mantido (contexto entre mensagens)
+- [ ] **RF3-008**: Anti-alucinação: não inventa informações fora do contexto
+- [ ] **RF3-009**: Timeout >5s → mensagem amigável, não erro técnico
+- [ ] **RF3-010**: Chat é 100% responsivo em mobile
+
+---
+
+**Specs de Origem**: `feat/chat-assistant`
+
+---
+
+**Próximo**: Explore [Decisões Técnicas](/decisoes-tecnicas/decisoes) para entender os trade-offs.

@@ -1,0 +1,236 @@
+---
+title: Stack Tecnológico
+description: Tecnologias por camada, alternativas e justificativas
+---
+
+# Stack Tecnológico
+
+## Visão Geral da Stack
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          APRESENTAÇÃO                            │
+│                      Next.js 14 (Frontend)                       │
+│              React 18 + Tailwind CSS 3 + TypeScript              │
+└─────────────────────────────────────────────────────────────────┘
+                                ↕
+                      HTTP + REST API + SSE
+                                ↕
+┌─────────────────────────────────────────────────────────────────┐
+│                         APLICAÇÃO                                │
+│                   Fastify 4 (Backend HTTP)                       │
+│            TypeScript 5 + Zod 3 + Vercel AI SDK                 │
+└─────────────────────────────────────────────────────────────────┘
+                                ↕
+                      Prisma ORM + SQL
+                                ↕
+┌─────────────────────────────────────────────────────────────────┐
+│                            DADOS                                 │
+│               PostgreSQL 16 (Database)                           │
+│                  Docker + Volume durável                         │
+└─────────────────────────────────────────────────────────────────┘
+                                ↕
+                          Groq API (IA)
+```
+
+## Detalhamento por Camada
+
+### Frontend
+
+#### Next.js 14 (App Router)
+
+**Por quê**: SSR (Server-Side Rendering) garante:
+- SEO para links compartilhados (ex: `/property/FLN001`)
+- Performance inicial melhor em mobile
+- Renderização no servidor reduz JavaScript no cliente
+- API routes podem fazer proxy para backend (segurança)
+
+**Alternativas rejeitadas**:
+- Create React App (outdated, sem SSR nativo)
+- Remix (excelente mas menos popular em Brasil)
+
+#### React 18
+
+**Por quê**:
+- Suspense para carregamento de dados
+- Transições automáticas sem setLoading manual
+- Renderização seletiva (Transition Hook para UI)
+
+#### Tailwind CSS 3
+
+**Por quê**:
+- Tokens de design Seazone (cores, espaçamento)
+- Responsividade mobile-first nativa (md:, lg:, etc.)
+- Sem CSS-in-JS (melhor performance)
+
+**Exemplo**:
+```tsx
+<div className="bg-seazone-coral text-seazone-navy md:flex-row md:gap-8">
+  {/* responde automaticamente em mobile vs desktop */}
+</div>
+```
+
+#### TypeScript 5 (strict mode)
+
+**Por quê**:
+- `strict: true` força tipos explícitos
+- Catch errors em compile time, não runtime
+- IntelliSense perfeito no VSCode
+
+### Backend
+
+#### Fastify 4
+
+**Por quê**:
+- **Rápido**: ~20k req/s vs ~8k req/s do Express
+- **Type-safe**: Suporte nativo a TypeScript
+- **Streams nativas**: SSE e WebSocket integrados
+- **Minimal**: Plugins só o necessário (não 50 pacotes desnecessários)
+
+**Alternativas rejeitadas**:
+- Express.js (lento, menos moderno)
+- Hono (mais rápido mas comunidade menor em Brasil)
+
+#### Vercel AI SDK + Groq
+
+**Por quê Vercel AI SDK**:
+- `generateObject()` para geração estruturada de respostas
+- `streamText()` para streaming de chat
+- Provider-agnostic (trocar Groq por OpenAI sem mudar código)
+
+**Por quê Groq**:
+- **Velocidade**: Token output de 150+ tok/s vs OpenAI 80-100 tok/s
+- **Custo**: 50% mais barato que ChatGPT
+- **Modelo**: GPT-OSS-120B (bom balance qualidade/speed)
+- **Alternativa**: Anthropic Claude (mais caro, não usamos para IA simples)
+
+#### Prisma 5
+
+**Por quê**:
+- `npx prisma migrate` automático (versionado)
+- Type-safe queries (geração automática de tipos)
+- Suporte a PostgreSQL nativo
+- Relações 1:N, N:M simplificadas
+
+#### Zod 3
+
+**Por quê**:
+- Validação de fronteira (entrada/saída)
+- `z.infer` gera tipos automaticamente
+- Mensagens de erro claras para hóspede
+- 0 dependências adicionais
+
+### Database
+
+#### PostgreSQL 16
+
+**Por quê**:
+- Open source, confiável em produção
+- JSONB para dados semi-estruturados (ex: amenidades, regras)
+- Volumes durável em Docker/Railway
+- Suporte a migrations via Prisma
+
+#### Docker + Docker Compose (local)
+
+```yaml
+postgres:
+  image: postgres:16-alpine
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+  environment:
+    POSTGRES_PASSWORD: ${DB_PASSWORD}
+```
+
+**Por quê**:
+- Paridade com produção (mesmo banco local e remoto)
+- Migrations rodam automaticamente
+- Volume durável: dados persistem entre restarts
+
+### Documentação
+
+#### Mintlify + MDX
+
+**Por quê Mintlify**:
+- Tema responsivo nativo (mobile-first)
+- Busca integrada
+- SEO automático
+- Suporta componentes ricos (Cards, Tabs, CodeGroup)
+
+**Por quê MDX**:
+- Markdown + componentes React
+- Versionado no git (documentação como código)
+- Fácil de editar
+
+## Decisões Importantes
+
+### IA: Por que não OpenAI?
+
+| Aspecto | Groq | OpenAI |
+|---------|------|--------|
+| **Latência** | ~400ms | ~1000ms |
+| **Custo** | $0.05/1M tokens | $0.10/1M tokens |
+| **Modelo** | GPT-OSS-120B | GPT-4 |
+| **Caso de Uso** | Chat simples ✅ | Tarefas complexas ✅ |
+
+**Decisão**: Usar Groq para chat do hóspede (respostas rápidas, custo baixo). Se necessário raciocínio complexo, trocar para Claude/GPT-4.
+
+### Persistência: Por que guardar Guidebook?
+
+**Motivo**: Gerar conteúdo por IA em cada acesso é lento (2-3 segundos).
+
+**Solução**: Guardar `Guidebook` na primeira geração, reutilizar nas próximas.
+
+```sql
+-- Tabela
+CREATE TABLE "Guidebook" (
+  id INT PRIMARY KEY,
+  propertyId INT UNIQUE,
+  restaurants JSON,
+  attractions JSON,
+  essentials JSON,
+  seasonal TEXT,
+  createdAt TIMESTAMP DEFAULT NOW()
+);
+
+-- Query
+SELECT g.* FROM "Guidebook" g 
+WHERE g.propertyId = :propertyId
+LIMIT 1;
+```
+
+### Frontend/Backend: Por que separados?
+
+**Benefícios**:
+- Deploy independente (frontend atualiza sem reiniciar backend)
+- Escalabilidade (100 frontend instances vs 1 backend)
+- Segurança (secrets só no backend, nunca no frontend)
+- Testabilidade (E2E testa toda a stack)
+
+## Ambiente Local vs Produção
+
+### Local (docker-compose)
+
+```bash
+docker-compose up
+
+# Resultado
+Frontend:  http://localhost:3000
+Backend:   http://localhost:4000
+Database:  localhost:5432
+Docs:      http://localhost:3001
+```
+
+### Produção (Railway)
+
+```
+Frontend:  https://guia-hospede.railway.app
+Backend:   https://api.guia-hospede.railway.app
+Database:  postgresql://<encrypted>.railway.app:5432
+Docs:      https://docs.guia-hospede.railway.app
+```
+
+Cada serviço pode ser escalado, atualizado ou reiniciado independentemente.
+
+---
+
+**Próximo**: Entenda como o código está organizado em [Vertical Slices](/arquitetura/vertical-slices).
