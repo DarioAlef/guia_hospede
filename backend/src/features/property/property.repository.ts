@@ -6,4 +6,8 @@ export class PropertyRepository {
   async findByCode(code: string) {
     return this.db.property.findUnique({ where: { code } });
   }
+
+  async findAll() {
+    return this.db.property.findMany({ orderBy: { name: "asc" } });
+  }
 }

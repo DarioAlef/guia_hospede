@@ -50,7 +50,7 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/PER007");
+    await page.goto("/property/PER007");
 
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
@@ -75,7 +75,7 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/PER007");
+    await page.goto("/property/PER007");
 
     const accordionButton = page.getByRole("button", {
       name: "Restaurantes Próximos",
@@ -92,7 +92,7 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
 
   test("US1: sem rolagem horizontal em viewport de 360px", async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 812 });
-    await page.goto("/PER007");
+    await page.goto("/property/PER007");
 
     await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible(
       {
@@ -116,7 +116,7 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
       await route.continue();
     });
 
-    await page.goto("/PER007");
+    await page.goto("/property/PER007");
 
     await expect(page.getByTestId("guidebook-skeleton")).toBeVisible({
       timeout: 5000,
@@ -144,7 +144,7 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
       })
     );
 
-    await page.goto("/PER007");
+    await page.goto("/property/PER007");
 
     await expect(page.getByTestId("guidebook-error")).toBeVisible({
       timeout: 5000,
@@ -155,7 +155,7 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
   test("US3: exibe tela 404 amigável para código inexistente", async ({
     page,
   }) => {
-    await page.goto("/ZZZ999");
+    await page.goto("/property/ZZZ999");
 
     await expect(page.getByTestId("not-found-page")).toBeVisible();
     await expect(
@@ -165,7 +165,7 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
   });
 
   test("US3: tela 404 não exibe dados de outro imóvel", async ({ page }) => {
-    await page.goto("/ZZZ999");
+    await page.goto("/property/ZZZ999");
 
     await expect(page.getByTestId("not-found-page")).toBeVisible();
     await expect(page.getByTestId("guidebook-skeleton")).not.toBeVisible();
@@ -176,7 +176,7 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/PER007");
+    await page.goto("/property/PER007");
 
     await expect(
       page.getByRole("button", { name: "Restaurantes Próximos" })

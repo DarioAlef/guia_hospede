@@ -6,10 +6,10 @@ import {
   StayRulesCard,
   AmenitiesCard,
   HostContactCard,
-} from "../../features/property";
-import { GuidebookSection } from "../../features/guidebook";
-import { ChatWidget } from "../../features/chat";
-import type { PropertyResponse } from "../../shared/dtos/property.dto";
+} from "../../../features/property";
+import { GuidebookSection } from "../../../features/guidebook";
+import { ChatWidget } from "../../../features/chat";
+import type { PropertyResponse } from "../../../shared/dtos/property.dto";
 
 interface PropertyPageProps {
   params: { code: string };

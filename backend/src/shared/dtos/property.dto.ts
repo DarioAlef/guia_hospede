@@ -56,6 +56,23 @@ export const PropertySchema = z.object({
 
 export type PropertyResponse = z.infer<typeof PropertySchema>;
 
+export const PropertySummarySchema = z.object({
+  code: z.string().length(6),
+  name: z.string(),
+  type: z.string(),
+  bedrooms: z.number().int().nonnegative(),
+  guestCapacity: z.number().int().positive(),
+  city: z.string(),
+  state: z.string().length(2),
+  image: z.string().nullable(),
+});
+
+export type PropertySummary = z.infer<typeof PropertySummarySchema>;
+
+export const PropertyListSchema = z.array(PropertySummarySchema);
+
+export type PropertyList = z.infer<typeof PropertyListSchema>;
+
 export const PropertyCodeParamSchema = z.object({
   code: z.string().regex(/^[A-Z0-9]{6}$/, {
     message:

@@ -19,6 +19,11 @@ export async function propertyRoute(
     opts.service ??
     new PropertyService(new PropertyRepository(getPrismaClient()));
 
+  app.get("/properties", async (_request, reply) => {
+    const properties = await service.listAll();
+    return reply.code(200).send(properties);
+  });
+
   app.get<{ Params: { code: string } }>(
     "/properties/:code",
     async (request, reply) => {
