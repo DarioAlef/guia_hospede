@@ -15,6 +15,7 @@ docker compose up --build
 ```
 
 Serviços disponíveis:
+
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3001
 - Saúde do backend: http://localhost:3001/health

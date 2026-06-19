@@ -10,10 +10,26 @@ import type { GuidebookContent } from "../../shared/dtos/guidebook.dto.js";
 
 const validContent: GuidebookContent = {
   restaurants: [
-    { name: "Ostradamus", cuisine: "Frutos do mar", description: "Ostras no Ribeirão." },
-    { name: "Restaurante 2", cuisine: "Brasileira", description: "Comida caseira." },
-    { name: "Restaurante 3", cuisine: "Italiana", description: "Massas artesanais." },
-    { name: "Restaurante 4", cuisine: "Japonesa", description: "Sushi fresco." },
+    {
+      name: "Ostradamus",
+      cuisine: "Frutos do mar",
+      description: "Ostras no Ribeirão.",
+    },
+    {
+      name: "Restaurante 2",
+      cuisine: "Brasileira",
+      description: "Comida caseira.",
+    },
+    {
+      name: "Restaurante 3",
+      cuisine: "Italiana",
+      description: "Massas artesanais.",
+    },
+    {
+      name: "Restaurante 4",
+      cuisine: "Japonesa",
+      description: "Sushi fresco.",
+    },
   ],
   attractions: [
     { name: "Praia da Joaquina", description: "Dunas e surfe." },
@@ -21,7 +37,11 @@ const validContent: GuidebookContent = {
     { name: "Centro Histórico", description: "Arquitetura colonial." },
   ],
   essentialServices: [
-    { name: "Supermercado Hippo", type: "mercado", description: "Mercado completo." },
+    {
+      name: "Supermercado Hippo",
+      type: "mercado",
+      description: "Mercado completo.",
+    },
   ],
   seasonalTip: "No inverno, leve agasalho.",
   welcomeMessage: "Bem-vindo a Florianópolis!",
@@ -59,7 +79,10 @@ describe("GuidebookService.getOrCreateByCode", () => {
     create = vi.fn();
     getByCode = vi.fn().mockResolvedValue(propertyStub);
     generator = vi.fn();
-    repository = { findByPropertyCode, create } as unknown as GuidebookRepository;
+    repository = {
+      findByPropertyCode,
+      create,
+    } as unknown as GuidebookRepository;
     propertyService = { getByCode } as unknown as PropertyService;
   });
 

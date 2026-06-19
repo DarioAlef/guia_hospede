@@ -7,7 +7,11 @@ interface AccordionProps {
   defaultOpen?: boolean;
 }
 
-export function Accordion({ title, children, defaultOpen = false }: AccordionProps) {
+export function Accordion({
+  title,
+  children,
+  defaultOpen = false,
+}: AccordionProps) {
   const [open, setOpen] = useState(defaultOpen);
   const uid = useId();
   const headingId = `${uid}-heading`;
@@ -32,7 +36,11 @@ export function Accordion({ title, children, defaultOpen = false }: AccordionPro
           stroke="currentColor"
           strokeWidth={2}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
       <div

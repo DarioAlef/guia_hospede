@@ -10,7 +10,10 @@ export function GuidebookSkeleton() {
       </div>
 
       {[0, 1, 2].map((i) => (
-        <div key={i} className="bg-seazone-card rounded-2xl shadow-sm overflow-hidden">
+        <div
+          key={i}
+          className="bg-seazone-card rounded-2xl shadow-sm overflow-hidden"
+        >
           <div className="flex items-center justify-between px-6 py-4">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-4 w-4" />

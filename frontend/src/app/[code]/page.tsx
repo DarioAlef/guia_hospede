@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { PropertyCard } from "../../features/property";
 import { GuidebookSection } from "../../features/guidebook";
+import { ChatWidget } from "../../features/chat";
 import type { PropertyResponse } from "../../shared/dtos/property.dto";
 
 interface PropertyPageProps {
@@ -24,6 +25,7 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
         <PropertyCard property={property} />
         <GuidebookSection code={params.code} backendUrl={backendUrl} />
       </div>
+      <ChatWidget code={params.code} />
     </main>
   );
 }

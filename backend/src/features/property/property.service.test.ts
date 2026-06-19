@@ -38,7 +38,8 @@ describe("PropertyService", () => {
         wifiPassword: "flnguest2024",
         selfCheckIn: true,
         accessType: "cofre",
-        accessInstructions: "O cofre está na entrada do prédio, coluna direita. Código: 4821.",
+        accessInstructions:
+          "O cofre está na entrada do prédio, coluna direita. Código: 4821.",
         propertyPassword: "4821",
         hasParking: true,
         parkingInfo: "Vaga 12, subsolo 1.",
