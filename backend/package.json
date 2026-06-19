@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-sdk/groq": "^3.0.42",
+    "@fastify/cors": "^8.5.0",
     "@prisma/client": "^5.22.0",
     "ai": "^6.0.208",
     "dotenv": "^17.4.2",

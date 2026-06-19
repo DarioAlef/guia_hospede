@@ -26,8 +26,21 @@ export class GuidebookService {
     if (existing) return this.toResponse(existing);
 
     const content = await this.generator(property);
-    const created = await this.repository.create(property.id, content);
-    return this.toResponse(created);
+    try {
+      const created = await this.repository.create(property.id, content);
+      return this.toResponse(created);
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "P2002"
+      ) {
+        const newlyCreated = await this.repository.findByPropertyCode(code);
+        if (newlyCreated) return this.toResponse(newlyCreated);
+      }
+      throw error;
+    }
   }
 
   private toResponse(record: NonNullable<PersistedGuidebook>): GuidebookResponse {
