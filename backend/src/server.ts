@@ -2,12 +2,14 @@ import Fastify from "fastify";
 import { env } from "./shared/env/env.js";
 import { healthRoute } from "./shared/health/health.route.js";
 import { propertyRoute } from "./features/property/property.route.js";
+import { guidebookRoute } from "./features/guidebook/guidebook.route.js";
 
 async function buildServer() {
   const app = Fastify({ logger: true });
 
   await app.register(healthRoute);
   await app.register(propertyRoute);
+  await app.register(guidebookRoute);
 
   return app;
 }
