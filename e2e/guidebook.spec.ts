@@ -44,3 +44,126 @@ test.describe("Guia Local — API (features/guidebook)", () => {
     await api.dispose();
   });
 });
+
+test.describe("Guia do Hóspede — UI (rota /[code])", () => {
+  test("US1: exibe PropertyCard e todas as seções do guia para código válido", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/PER007");
+
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+    await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible({
+      timeout: 30000,
+    });
+    await expect(page.getByRole("button", { name: "Restaurantes Próximos" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Atrações Locais" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Serviços Essenciais" })).toBeVisible();
+    await expect(page.getByText("Dica da Temporada")).toBeVisible();
+  });
+
+  test("US1: accordion expande e colapsa com ARIA correto", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/PER007");
+
+    const accordionButton = page.getByRole("button", { name: "Restaurantes Próximos" });
+    await expect(accordionButton).toBeVisible({ timeout: 30000 });
+    await expect(accordionButton).toHaveAttribute("aria-expanded", "false");
+
+    await accordionButton.click();
+    await expect(accordionButton).toHaveAttribute("aria-expanded", "true");
+
+    await accordionButton.click();
+    await expect(accordionButton).toHaveAttribute("aria-expanded", "false");
+  });
+
+  test("US1: sem rolagem horizontal em viewport de 360px", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 812 });
+    await page.goto("/PER007");
+
+    await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible({
+      timeout: 30000,
+    });
+
+    const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
+    expect(bodyScrollWidth).toBeLessThanOrEqual(360);
+  });
+
+  test("US2: exibe skeleton durante geração do guia e PropertyCard permanece visível", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.route("**/properties/*/guidebook", async (route) => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+      await route.continue();
+    });
+
+    await page.goto("/PER007");
+
+    await expect(page.getByTestId("guidebook-skeleton")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+    await expect(page.getByTestId("guidebook-skeleton")).not.toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible();
+  });
+
+  test("US2: exibe erro inline quando geração falha e PropertyCard permanece visível", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    await page.route("**/properties/*/guidebook", (route) =>
+      route.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "GENERATION_FAILED" }),
+      })
+    );
+
+    await page.goto("/PER007");
+
+    await expect(page.getByTestId("guidebook-error")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  });
+
+  test("US3: exibe tela 404 amigável para código inexistente", async ({ page }) => {
+    await page.goto("/ZZZ999");
+
+    await expect(page.getByTestId("not-found-page")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Imóvel não encontrado" })
+    ).toBeVisible();
+    await expect(page.getByText(/anfitrião/i)).toBeVisible();
+  });
+
+  test("US3: tela 404 não exibe dados de outro imóvel", async ({ page }) => {
+    await page.goto("/ZZZ999");
+
+    await expect(page.getByTestId("not-found-page")).toBeVisible();
+    await expect(page.getByTestId("guidebook-skeleton")).not.toBeVisible();
+    await expect(page.getByTestId("guidebook-error")).not.toBeVisible();
+  });
+
+  test("FR-011: alvos de toque dos accordions têm pelo menos 44px de altura", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/PER007");
+
+    await expect(page.getByRole("button", { name: "Restaurantes Próximos" })).toBeVisible({
+      timeout: 30000,
+    });
+
+    const accordionButtons = page.getByRole("button", {
+      name: /Restaurantes|Atrações|Serviços/,
+    });
+
+    for (const button of await accordionButtons.all()) {
+      const box = await button.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+});

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
-import { PropertyCard } from "../../features/property/components/PropertyCard";
+import { PropertyCard } from "../../features/property";
+import { GuidebookSection } from "../../features/guidebook";
 import type { PropertyResponse } from "../../shared/dtos/property.dto";
 
 interface PropertyPageProps {
@@ -18,8 +19,11 @@ export default async function PropertyPage({ params }: PropertyPageProps) {
   const property: PropertyResponse = await res.json();
 
   return (
-    <main className="min-h-screen p-4 md:p-8">
-      <PropertyCard property={property} />
+    <main className="min-h-screen bg-seazone-background py-6 px-4">
+      <div className="max-w-2xl mx-auto space-y-4">
+        <PropertyCard property={property} />
+        <GuidebookSection code={params.code} backendUrl={backendUrl} />
+      </div>
     </main>
   );
 }
