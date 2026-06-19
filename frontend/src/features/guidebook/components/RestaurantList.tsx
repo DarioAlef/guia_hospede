@@ -16,9 +16,15 @@ export function RestaurantList({ restaurants }: RestaurantListProps) {
             key={index}
             className="border-b border-gray-100 pb-4 last:border-0 last:pb-0"
           >
-            <p className="font-semibold text-seazone-navy text-sm">{restaurant.name}</p>
-            <p className="text-xs text-seazone-coral mt-0.5 font-medium">{restaurant.cuisine}</p>
-            <p className="text-sm text-gray-600 mt-1 leading-relaxed">{restaurant.description}</p>
+            <p className="font-semibold text-seazone-navy text-sm">
+              {restaurant.name}
+            </p>
+            <p className="text-xs text-seazone-coral mt-0.5 font-medium">
+              {restaurant.cuisine}
+            </p>
+            <p className="text-sm text-gray-600 mt-1 leading-relaxed">
+              {restaurant.description}
+            </p>
           </div>
         ))}
       </div>

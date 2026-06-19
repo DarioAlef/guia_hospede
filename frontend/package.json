@@ -9,6 +9,8 @@
     "sync-types": "cp -r ../backend/src/shared/dtos src/shared/dtos"
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.210",
+    "ai": "^6.0.208",
     "next": "^14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

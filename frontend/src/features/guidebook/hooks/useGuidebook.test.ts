@@ -4,15 +4,21 @@ import { GuidebookErrorCode } from "../../../shared/dtos/guidebook.dto";
 
 describe("mapGuidebookError", () => {
   test("retorna GENERATION_FAILED para o código correto", () => {
-    expect(mapGuidebookError(GuidebookErrorCode.GENERATION_FAILED)).toBe("GENERATION_FAILED");
+    expect(mapGuidebookError(GuidebookErrorCode.GENERATION_FAILED)).toBe(
+      "GENERATION_FAILED"
+    );
   });
 
   test("retorna PROPERTY_NOT_FOUND para o código correto", () => {
-    expect(mapGuidebookError(GuidebookErrorCode.PROPERTY_NOT_FOUND)).toBe("PROPERTY_NOT_FOUND");
+    expect(mapGuidebookError(GuidebookErrorCode.PROPERTY_NOT_FOUND)).toBe(
+      "PROPERTY_NOT_FOUND"
+    );
   });
 
   test("retorna INVALID_CODE para o código correto", () => {
-    expect(mapGuidebookError(GuidebookErrorCode.INVALID_CODE)).toBe("INVALID_CODE");
+    expect(mapGuidebookError(GuidebookErrorCode.INVALID_CODE)).toBe(
+      "INVALID_CODE"
+    );
   });
 
   test("retorna UNKNOWN para string não reconhecida", () => {

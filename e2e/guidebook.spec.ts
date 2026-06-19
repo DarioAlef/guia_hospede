@@ -54,20 +54,32 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
 
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-    await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible({
-      timeout: 30000,
-    });
-    await expect(page.getByRole("button", { name: "Restaurantes Próximos" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Atrações Locais" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Serviços Essenciais" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible(
+      {
+        timeout: 30000,
+      }
+    );
+    await expect(
+      page.getByRole("button", { name: "Restaurantes Próximos" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Atrações Locais" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Serviços Essenciais" })
+    ).toBeVisible();
     await expect(page.getByText("Dica da Temporada")).toBeVisible();
   });
 
-  test("US1: accordion expande e colapsa com ARIA correto", async ({ page }) => {
+  test("US1: accordion expande e colapsa com ARIA correto", async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/PER007");
 
-    const accordionButton = page.getByRole("button", { name: "Restaurantes Próximos" });
+    const accordionButton = page.getByRole("button", {
+      name: "Restaurantes Próximos",
+    });
     await expect(accordionButton).toBeVisible({ timeout: 30000 });
     await expect(accordionButton).toHaveAttribute("aria-expanded", "false");
 
@@ -82,11 +94,15 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
     await page.setViewportSize({ width: 360, height: 812 });
     await page.goto("/PER007");
 
-    await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible({
-      timeout: 30000,
-    });
+    await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible(
+      {
+        timeout: 30000,
+      }
+    );
 
-    const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
+    const bodyScrollWidth = await page.evaluate(
+      () => document.body.scrollWidth
+    );
     expect(bodyScrollWidth).toBeLessThanOrEqual(360);
   });
 
@@ -102,11 +118,17 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
 
     await page.goto("/PER007");
 
-    await expect(page.getByTestId("guidebook-skeleton")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("guidebook-skeleton")).toBeVisible({
+      timeout: 5000,
+    });
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
 
-    await expect(page.getByTestId("guidebook-skeleton")).not.toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("heading", { name: "Bem-vindo!" })).toBeVisible();
+    await expect(page.getByTestId("guidebook-skeleton")).not.toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByRole("heading", { name: "Bem-vindo!" })
+    ).toBeVisible();
   });
 
   test("US2: exibe erro inline quando geração falha e PropertyCard permanece visível", async ({
@@ -124,11 +146,15 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
 
     await page.goto("/PER007");
 
-    await expect(page.getByTestId("guidebook-error")).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId("guidebook-error")).toBeVisible({
+      timeout: 5000,
+    });
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
-  test("US3: exibe tela 404 amigável para código inexistente", async ({ page }) => {
+  test("US3: exibe tela 404 amigável para código inexistente", async ({
+    page,
+  }) => {
     await page.goto("/ZZZ999");
 
     await expect(page.getByTestId("not-found-page")).toBeVisible();
@@ -152,7 +178,9 @@ test.describe("Guia do Hóspede — UI (rota /[code])", () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/PER007");
 
-    await expect(page.getByRole("button", { name: "Restaurantes Próximos" })).toBeVisible({
+    await expect(
+      page.getByRole("button", { name: "Restaurantes Próximos" })
+    ).toBeVisible({
       timeout: 30000,
     });
 

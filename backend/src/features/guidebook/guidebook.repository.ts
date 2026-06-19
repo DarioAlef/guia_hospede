@@ -13,7 +13,10 @@ export class GuidebookRepository {
 
   async create(propertyId: string, content: GuidebookContent) {
     return this.db.guidebook.create({
-      data: { propertyId, ...content },
+      data: {
+        property: { connect: { id: propertyId } },
+        ...content,
+      },
       include: { property: { select: { code: true } } },
     });
   }
