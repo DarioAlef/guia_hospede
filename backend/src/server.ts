@@ -1,0 +1,24 @@
+import Fastify from "fastify";
+import { env } from "./shared/env/env.js";
+import { healthRoute } from "./shared/health/health.route.js";
+
+async function buildServer() {
+  const app = Fastify({ logger: true });
+
+  await app.register(healthRoute);
+
+  return app;
+}
+
+async function start() {
+  const app = await buildServer();
+
+  try {
+    await app.listen({ port: env.PORT, host: "0.0.0.0" });
+  } catch (error) {
+    app.log.error(error);
+    process.exit(1);
+  }
+}
+
+start();

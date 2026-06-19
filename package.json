@@ -1,0 +1,21 @@
+{
+  "name": "guia-hospede-root",
+  "private": true,
+  "scripts": {
+    "sync-types": "rm -rf frontend/src/shared/dtos && cp -r backend/src/shared/dtos frontend/src/shared/dtos",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.3.0",
+    "@playwright/test": "^1.44.0",
+    "eslint": "^9.3.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^7.10.0",
+    "vitest": "^1.6.0"
+  }
+}
