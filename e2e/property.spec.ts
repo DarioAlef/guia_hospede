@@ -10,7 +10,7 @@ test.describe("Imóvel — fluxo principal", () => {
     await expect(
       page.getByRole("heading", { name: "Apartamento Beira-Mar Floripa" }),
     ).toBeVisible();
-    await expect(page.getByText("Florianópolis")).toBeVisible();
+    await expect(page.getByText("Florianópolis, SC")).toBeVisible();
     await expect(page.getByText("SeazoneFLN001")).toBeVisible();
     await expect(page.getByText("Carlos Mendes")).toBeVisible();
     await expect(
