@@ -1,5 +1,8 @@
 import type { PropertyRepository } from "./property.repository.js";
-import { PropertySchema, type PropertyResponse } from "../../shared/dtos/property.dto.js";
+import {
+  PropertySchema,
+  type PropertyResponse,
+} from "../../shared/dtos/property.dto.js";
 
 export class PropertyNotFoundError extends Error {
   constructor(code: string) {

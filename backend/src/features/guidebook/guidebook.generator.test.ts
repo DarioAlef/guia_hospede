@@ -39,11 +39,16 @@ const propertyStub = {
 
 describe("GuidebookGenerationSchema", () => {
   it("aceita uma saída completa e válida", () => {
-    expect(GuidebookGenerationSchema.safeParse(validContent).success).toBe(true);
+    expect(GuidebookGenerationSchema.safeParse(validContent).success).toBe(
+      true
+    );
   });
 
   it("rejeita saída com menos de 4 restaurantes", () => {
-    const invalid = { ...validContent, restaurants: validContent.restaurants.slice(0, 3) };
+    const invalid = {
+      ...validContent,
+      restaurants: validContent.restaurants.slice(0, 3),
+    };
     expect(GuidebookGenerationSchema.safeParse(invalid).success).toBe(false);
   });
 

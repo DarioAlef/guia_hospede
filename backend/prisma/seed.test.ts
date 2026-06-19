@@ -19,7 +19,8 @@ describe("seed", () => {
     expect(mockUpsert).toHaveBeenCalledTimes(3);
 
     const codes = mockUpsert.mock.calls.map(
-      (call: Parameters<typeof mockUpsert>) => (call[0] as { where: { code: string } }).where.code
+      (call: Parameters<typeof mockUpsert>) =>
+        (call[0] as { where: { code: string } }).where.code
     );
     expect(codes).toContain("FLN001");
     expect(codes).toContain("GRM001");

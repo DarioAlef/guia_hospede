@@ -43,7 +43,9 @@ export class GuidebookService {
     }
   }
 
-  private toResponse(record: NonNullable<PersistedGuidebook>): GuidebookResponse {
+  private toResponse(
+    record: NonNullable<PersistedGuidebook>
+  ): GuidebookResponse {
     return GuidebookResponseSchema.parse({
       id: record.id,
       propertyCode: record.property.code,

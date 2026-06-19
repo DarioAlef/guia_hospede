@@ -2,7 +2,10 @@ import type { FastifyInstance } from "fastify";
 import { GuidebookRepository } from "./guidebook.repository.js";
 import { GuidebookService } from "./guidebook.service.js";
 import { GuidebookGenerationError } from "./guidebook.generator.js";
-import { createPropertyService, PropertyNotFoundError } from "../property/index.js";
+import {
+  createPropertyService,
+  PropertyNotFoundError,
+} from "../property/index.js";
 import { PropertyCodeParamSchema } from "../../shared/dtos/property.dto.js";
 import { GuidebookErrorCode } from "../../shared/dtos/guidebook.dto.js";
 import { getPrismaClient } from "../../shared/db/prisma.js";
@@ -37,7 +40,9 @@ export async function guidebookRoute(
       }
 
       try {
-        const guidebook = await service.getOrCreateByCode(paramResult.data.code);
+        const guidebook = await service.getOrCreateByCode(
+          paramResult.data.code
+        );
         return reply.code(200).send(guidebook);
       } catch (error) {
         if (error instanceof PropertyNotFoundError) {

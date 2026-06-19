@@ -26,7 +26,8 @@ const properties = [
         "O cofre está na entrada do prédio, coluna direita. Código: 4821.",
       propertyPassword: "4821",
       hasParking: true,
-      parkingInfo: "Vaga 12, subsolo 1. Use o controle remoto na gaveta da entrada.",
+      parkingInfo:
+        "Vaga 12, subsolo 1. Use o controle remoto na gaveta da entrada.",
     },
     rules: {
       checkInTime: "15:00",
@@ -37,7 +38,14 @@ const properties = [
       suitableForChildren: true,
       suitableForInfants: false,
     },
-    amenities: ["wifi", "tv", "ar-condicionado", "cozinha-equipada", "lavanderia", "varanda"],
+    amenities: [
+      "wifi",
+      "tv",
+      "ar-condicionado",
+      "cozinha-equipada",
+      "lavanderia",
+      "varanda",
+    ],
     images: [
       "https://images.seazone.com.br/fln001/sala.jpg",
       "https://images.seazone.com.br/fln001/quarto-1.jpg",
@@ -79,7 +87,15 @@ const properties = [
       suitableForChildren: true,
       suitableForInfants: true,
     },
-    amenities: ["wifi", "tv", "lareira", "cozinha-equipada", "churrasqueira", "banheira-hidro", "jardim"],
+    amenities: [
+      "wifi",
+      "tv",
+      "lareira",
+      "cozinha-equipada",
+      "churrasqueira",
+      "banheira-hidro",
+      "jardim",
+    ],
     images: [
       "https://images.seazone.com.br/grm001/fachada.jpg",
       "https://images.seazone.com.br/grm001/sala-lareira.jpg",
@@ -121,7 +137,15 @@ const properties = [
       suitableForChildren: true,
       suitableForInfants: true,
     },
-    amenities: ["wifi", "tv", "piscina", "churrasqueira", "cozinha-equipada", "mesa-de-jogos", "fogueira"],
+    amenities: [
+      "wifi",
+      "tv",
+      "piscina",
+      "churrasqueira",
+      "cozinha-equipada",
+      "mesa-de-jogos",
+      "fogueira",
+    ],
     images: [
       "https://images.seazone.com.br/per007/fachada.jpg",
       "https://images.seazone.com.br/per007/piscina.jpg",
@@ -143,7 +167,8 @@ export async function seed(db?: PrismaClient): Promise<void> {
         create: property,
       });
     }
-    if (owned) console.log("Seed concluído: FLN001, GRM001, PER007 disponíveis.");
+    if (owned)
+      console.log("Seed concluído: FLN001, GRM001, PER007 disponíveis.");
   } finally {
     if (owned) await client.$disconnect();
   }

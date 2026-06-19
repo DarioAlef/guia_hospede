@@ -54,9 +54,7 @@ describe("propertyRoute — validação do param :code", () => {
 
   it("retorna 404 para código válido mas imóvel inexistente (XYZ999)", async () => {
     const mockService = {
-      getByCode: vi
-        .fn()
-        .mockRejectedValue(new PropertyNotFoundError("XYZ999")),
+      getByCode: vi.fn().mockRejectedValue(new PropertyNotFoundError("XYZ999")),
     } as unknown as PropertyService;
     const app = Fastify({ logger: false });
     await app.register(propertyRoute, { service: mockService });
@@ -96,7 +94,11 @@ describe("propertyRoute — validação do param :code", () => {
       url: "/properties/XYZ999",
     });
 
-    expect(JSON.parse(res400.payload).error).toBe(PropertyErrorCode.INVALID_CODE);
-    expect(JSON.parse(res404.payload).error).toBe(PropertyErrorCode.PROPERTY_NOT_FOUND);
+    expect(JSON.parse(res400.payload).error).toBe(
+      PropertyErrorCode.INVALID_CODE
+    );
+    expect(JSON.parse(res404.payload).error).toBe(
+      PropertyErrorCode.PROPERTY_NOT_FOUND
+    );
   });
 });
