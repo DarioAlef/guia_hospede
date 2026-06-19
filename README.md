@@ -1,45 +1,43 @@
 # Seazone — Guia Digital do Hóspede
 
-Monorepo com backend Fastify + frontend Next.js + PostgreSQL, orquestrado por Docker Compose.
+Solução de guia digital personalizado com IA para propriedades.
 
-## Pré-requisitos
-
-- Docker e Docker Compose instalados
-- Git
-
-## Subir o ambiente
+## 🚀 Rodar Localmente
 
 ```bash
+# Setup
 cp .env.example .env
-docker compose up --build
+npm install && npm --prefix backend install && npm --prefix frontend install
+
+# Start
+docker-compose up -d
+cd backend && npx prisma migrate dev && npm run dev &
+npm --prefix frontend run dev
 ```
 
-Serviços disponíveis:
+Frontend: http://localhost:3001  
+Backend: http://localhost:3000
 
-- Frontend: http://localhost:3000
-- Backend: http://localhost:3001
-- Saúde do backend: http://localhost:3001/health
+## 📚 Documentação
 
-## Quality gates
+Veja `/docs` para guia completo (arquitectura, features, deploy, testes).
 
 ```bash
-npm install                 # instala ferramentas da raiz (ESLint, Prettier, Vitest, Playwright)
-npm run sync-types          # sincroniza DTOs do backend para o frontend
-npm run lint                # ESLint (falha em qualquer `any`)
-npm run format              # Prettier
-npm run test                # Vitest (unitário)
-npm run test:e2e            # Playwright headed (abre browser)
+cd docs && npx mint dev
 ```
 
-## Estrutura
+## 🧪 Testes
 
-```
-/
-├── backend/          # Fastify + Prisma + Zod
-├── frontend/         # Next.js 14+ App Router
-├── e2e/              # Testes Playwright
-├── docker-compose.yml
-└── tsconfig.base.json
+```bash
+npm --prefix backend run test:unit
+npm --prefix frontend run test:unit
+npm --prefix frontend run test:e2e
 ```
 
-Guia de arquitetura: `.specify/memory/constitution.md`
+## 📋 Stack
+
+- Frontend: Next.js 14, React 18, Tailwind CSS
+- Backend: Fastify 4, Prisma 5, Zod 3
+- IA: Groq API + Vercel AI SDK
+- Database: PostgreSQL 16
+- Docs: Mintlify + MDX

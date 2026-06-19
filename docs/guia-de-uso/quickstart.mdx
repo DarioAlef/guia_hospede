@@ -1,0 +1,402 @@
+---
+title: Quickstart — Rodar Localmente
+description: Passo a passo para subir frontend, backend e database localmente
+---
+
+# Quickstart — Rodar Localmente
+
+Guia prático para colocar a aplicação completa rodando na sua máquina em &lt;15 minutos.
+
+---
+
+## Pré-requisitos
+
+### Obrigatório
+
+- **Git** (para clonar o repositório)
+- **Node.js 20 LTS** (≥20.17, menores que 25) — [Download](https://nodejs.org)
+  - Verificar: `node --version`
+- **Docker** + **Docker Compose** — [Download](https://www.docker.com/products/docker-desktop)
+  - Verificar: `docker --version` e `docker-compose --version`
+
+### Recomendado
+
+- **VS Code** — Editor de código
+- **Rest Client** ou **Postman** — Para testar endpoints
+- **Git Bash** (Windows) — Para comandos UNIX
+
+---
+
+## Passo 1: Clonar o Repositório
+
+```
+git clone https://github.com/seazone/guia-hospede.git
+cd guia-hospede
+```
+
+---
+
+## Passo 2: Copiar Arquivo de Ambiente
+
+```
+cp .env.example .env
+```
+
+O arquivo `.env` contém variáveis de ambiente necessárias. Não fazer commit com segredos reais!
+
+**Conteúdo esperado** (exemplo seguro):
+
+```
+# Backend
+NODE_ENV=development
+DATABASE_URL=postgresql://postgres:seazone_dev@localhost:5432/guia_hospede
+GROQ_API_KEY=sk-proj-...  # Obter em https://console.groq.com
+API_PORT=4000
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:4000
+
+# PostgreSQL (docker-compose)
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=seazone_dev
+POSTGRES_DB=guia_hospede
+```
+
+> ⚠️ **Importante**: Criar conta em [Groq Console](https://console.groq.com) e copiar sua chave API para `GROQ_API_KEY`. É gratuito e instantâneo.
+
+---
+
+## Passo 3: Instalar Dependências
+
+### Backend
+
+```
+cd backend
+npm install
+cd ..
+```
+
+### Frontend
+
+```
+cd frontend
+npm install
+cd ..
+```
+
+### Documentação (opcional, para preview local)
+
+```
+cd docs
+npm install -g mint
+cd ..
+```
+
+---
+
+## Passo 4: Rodar Docker Compose
+
+Este comando inicia **PostgreSQL** automaticamente.
+
+```
+docker-compose up -d
+```
+
+**Verificar status**:
+
+```
+docker-compose ps
+
+# Esperado:
+# NAME      IMAGE              STATUS
+# postgres  postgres:16-alpine Up 2 seconds
+```
+
+### Se porta 5432 já está ocupada
+
+```
+# Encontrar processo usando porta 5432
+lsof -i :5432
+
+# Matar processo (macOS/Linux)
+kill -9 <PID>
+
+# Ou usar porta diferente em docker-compose.yml
+```
+
+---
+
+## Passo 5: Rodar Migrations do Banco
+
+O backend usa **Prisma** para migrations.
+
+```
+cd backend
+npx prisma migrate dev
+# Após confirmar: "schema" → "dev" → "nomear migration" (ex: "initial")
+cd ..
+```
+
+Isso:
+1. ✅ Cria tabelas (Property, Guidebook, etc.)
+2. ✅ Popula dados de referência (FLN001, GRM001, PER007)
+
+---
+
+## Passo 6: Iniciar o Backend (Fastify)
+
+```
+cd backend
+npm run dev
+# Esperado: [Fastify] Server listening on http://0.0.0.0:4000
+```
+
+Deixar este terminal aberto.
+
+---
+
+## Passo 7: Em Outro Terminal, Iniciar o Frontend (Next.js)
+
+```
+cd frontend
+npm run dev
+# Esperado: ▲ Next.js 14.0.0
+#         - ready started server on 0.0.0.0:3000
+```
+
+Deixar este terminal aberto.
+
+---
+
+## Passo 8: Abrir no Navegador
+
+```
+http://localhost:3000
+```
+
+Se vir a página home com link para `/property/FLN001`, está funcionando!
+
+---
+
+## Verificar Aplicação
+
+### ✅ RF1 — Visualização do Guia
+
+Acesse [http://localhost:3000/property/FLN001](http://localhost:3000/property/FLN001)
+
+Deve exibir:
+- 📸 Fotos do imóvel
+- 📝 Nome, tipo, localização
+- 🛏️ Capacidade (quartos, banheiros)
+- 🔓 Informações de acesso (WiFi, smart lock)
+- 📋 Regras (check-in, animais, etc.)
+- ☎️ Contato do anfitrião
+
+### ✅ RF2 — Guia de Experiências
+
+Scroll para baixo na mesma página. Deve exibir:
+- ✨ Mensagem de boas-vindas personalizada
+- 🍽️ Restaurantes próximos (4-5)
+- 🎭 Atrações (3-4)
+- ⚕️ Serviços essenciais (farmácia, etc.)
+- 🌤️ Dica sazonal
+
+> **Primeira vez**: Pode demorar 2-3s (IA gerando). Próximas vezes: menos de 100ms (cache).
+
+### ✅ RF3 — Assistente Virtual
+
+No fim da página, há um chat. Tente:
+
+```
+Você: "Qual a senha do WiFi?"
+Assistente: "A rede é SeaHome_FLN001 e a senha é floripa2024."
+
+Você: "Posso trazer meu cachorro?"
+Assistente: "Infelizmente este imóvel não permite animais..."
+
+Você: "Que restaurantes tem perto?"
+Assistente: "Perto de você tem Box 32 (1,2 km)..."
+```
+
+Respostas devem aparecer **progressivamente** (streaming).
+
+---
+
+## Testar Outro Imóvel
+
+Acesse [http://localhost:3000/property/GRM001](http://localhost:3000/property/GRM001)
+
+Deve mostrar dados diferentes (Gramado em vez de Florianópolis).
+
+---
+
+## Testar 404
+
+Acesse [http://localhost:3000/property/INVALID](http://localhost:3000/property/INVALID)
+
+Deve exibir página de erro amigável.
+
+---
+
+## Rodar Testes
+
+### Testes Unitários (Vitest)
+
+```
+cd backend
+npm run test:unit
+# ou
+npm run test:unit -- --watch
+```
+
+```
+cd frontend
+npm run test:unit
+# ou
+npm run test:unit -- --watch
+```
+
+### Testes E2E (Playwright)
+
+```
+cd frontend
+npm run test:e2e
+# Interface visual do Playwright abre
+```
+
+Para headless (CI):
+
+```
+npm run test:e2e -- --headed
+```
+
+---
+
+## Rodar Documentação Localmente
+
+### Opção 1: Direto com Mint CLI
+
+```
+cd docs
+npx mint dev
+# Abre em http://localhost:3000
+```
+
+### Opção 2: Via Docker (Paridade com Railway)
+
+```
+docker build -t guia-docs ./docs
+docker run -p 3001:3000 -e PORT=3000 guia-docs
+# Abre em http://localhost:3001
+```
+
+---
+
+## Parar Tudo
+
+### Parar serviços
+
+```
+# Terminal 1 (Backend): Ctrl+C
+# Terminal 2 (Frontend): Ctrl+C
+```
+
+### Parar Docker
+
+```
+docker-compose down
+# Opcional: remover volumes com -v
+# docker-compose down -v
+```
+
+---
+
+## Troubleshooting
+
+### "Error: connect ECONNREFUSED 127.0.0.1:5432"
+
+Banco não está rodando.
+
+```
+docker-compose up -d
+docker-compose ps
+```
+
+### "Error: Code P3014 (Prisma)"
+
+Schema de migrations desatualizado.
+
+```
+cd backend
+npx prisma migrate reset
+# ⚠️ Isto apaga e recria o banco
+```
+
+### "GROQ_API_KEY is missing"
+
+Variável de ambiente não foi configurada.
+
+```
+# Verificar .env
+cat .env | grep GROQ_API_KEY
+
+# Se vazio, adicionar chave
+echo "GROQ_API_KEY=sk-proj-..." >> .env
+```
+
+### "Port 3000 already in use"
+
+Outra aplicação usa porta 3000.
+
+```
+# Usar porta diferente
+npm run dev -- -p 3001
+
+# Ou matar processo anterior
+lsof -i :3000
+kill -9 <PID>
+```
+
+### Chat não responde
+
+Verificar se backend está rodando:
+
+```
+curl http://localhost:4000/health
+# Esperado: {"status":"ok"}
+```
+
+Se retornar erro, reiniciar backend:
+
+```
+cd backend
+npm run dev
+```
+
+---
+
+## Próximos Passos
+
+1. **Explorar Código**: Leia `backend/src/slices/` para entender vertical slices
+2. **Rodar Testes**: `npm run test:unit` e `npm run test:e2e`
+3. **Fazer Alterações**: Edite uma página e veja o hot reload (HMR)
+4. **Deploy**: Veja [Deploy no Railway](/guia-de-uso/deploy-railway)
+
+---
+
+## Dica: Git Workflow
+
+Se clonou para avaliar, considere criar uma branch local:
+
+```
+git checkout -b meu-teste
+# Fazer alterações
+git diff
+# Ver mudanças
+```
+
+Isso permite experimentar sem danificar `main`.
+
+---
+
+**Próximo**: Configure [Variáveis de Ambiente](/guia-de-uso/variaveis-ambiente) em detalhe.

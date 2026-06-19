@@ -1,0 +1,417 @@
+---
+title: Testes — Unitários e E2E
+description: Como rodar, estrutura e cobertura esperada
+---
+
+# Testes — Unitários e E2E
+
+Testes são parte crucial da qualidade. Esta aplicação possui:
+- **Testes Unitários** (Vitest) — Lógica isolada
+- **Testes E2E** (Playwright) — Fluxos completos do hóspede
+
+---
+
+## Testes Unitários (Vitest)
+
+### O Que Testar?
+
+- **Serviços** — Lógica de negócio (buscar property, gerar guia, processar chat)
+- **Utilities** — Formatadores, validadores
+- **Hooks** (Frontend) — useProperty, useGuidebook, useChat
+
+### Estrutura de Pastas
+
+```
+backend/src/
+├── slices/
+│   ├── property/
+│   │   ├── property.service.ts
+│   │   ├── property.service.test.ts  ← Testes aqui
+│   │   └── ...
+│   ├── guidebook/
+│   │   ├── guidebook.service.ts
+│   │   ├── guidebook.service.test.ts ← Testes aqui
+│   │   └── ...
+│   └── chat/
+│       ├── chat.service.ts
+│       ├── chat.service.test.ts      ← Testes aqui
+│       └── ...
+
+frontend/src/
+├── slices/
+│   ├── property/
+│   │   ├── hooks/
+│   │   │   ├── useProperty.ts
+│   │   │   └── useProperty.test.ts   ← Testes aqui
+│   │   └── ...
+│   └── ...
+```
+
+### Rodar Testes Unitários
+
+#### Backend
+
+```bash
+cd backend
+
+# Rodar uma vez
+npm run test:unit
+
+# Modo watch (rerun ao salvar arquivo)
+npm run test:unit -- --watch
+
+# Com coverage
+npm run test:unit -- --coverage
+```
+
+#### Frontend
+
+```bash
+cd frontend
+
+# Rodar uma vez
+npm run test:unit
+
+# Modo watch
+npm run test:unit -- --watch
+
+# Com coverage
+npm run test:unit -- --coverage
+```
+
+### Exemplo: Teste de PropertyService
+
+```typescript
+// backend/src/slices/property/property.service.test.ts
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { PropertyService } from './property.service';
+import { PrismaClient } from '@prisma/client';
+
+describe('PropertyService', () => {
+  let service: PropertyService;
+  let prismaClient: PrismaClient;
+
+  beforeEach(() => {
+    prismaClient = new PrismaClient();
+    service = new PropertyService(prismaClient);
+  });
+
+  it('deve retornar property quando código existe', async () => {
+    const property = await service.getByCode('FLN001');
+    
+    expect(property).toBeDefined();
+    expect(property.code).toBe('FLN001');
+    expect(property.name).toBe('Apartamento Beira-Mar Florianópolis');
+  });
+
+  it('deve lançar NotFoundError quando código não existe', async () => {
+    await expect(
+      service.getByCode('INVALID')
+    ).rejects.toThrow('Property with code "INVALID" not found');
+  });
+
+  it('deve incluir guidebook se existir', async () => {
+    const property = await service.getByCode('FLN001');
+    
+    expect(property.guidebook).toBeDefined();
+    expect(property.guidebook.restaurants).toBeDefined();
+  });
+});
+```
+
+### Exemplo: Teste de Hook (Frontend)
+
+```typescript
+// frontend/src/slices/property/hooks/useProperty.test.ts
+import { renderHook, waitFor } from '@testing-library/react';
+import { useProperty } from './useProperty';
+
+describe('useProperty', () => {
+  it('deve carregar property corretamente', async () => {
+    const { result } = renderHook(() => useProperty('FLN001'));
+
+    // Inicial: loading
+    expect(result.current.loading).toBe(true);
+
+    // Aguarda
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    // Verificar dados
+    expect(result.current.property).toBeDefined();
+    expect(result.current.property.code).toBe('FLN001');
+  });
+
+  it('deve retornar erro para código inválido', async () => {
+    const { result } = renderHook(() => useProperty('INVALID'));
+
+    await waitFor(() => {
+      expect(result.current.error).toBeDefined();
+      expect(result.current.error.message).toContain('not found');
+    });
+  });
+});
+```
+
+---
+
+## Testes E2E (Playwright)
+
+### O Que Testar?
+
+- **Fluxo completo do hóspede** — Acessar guia, ler dados, fazer pergunta no chat
+- **Erros esperados** — 404, timeout de IA, conexão perdida
+- **Responsividade** — Funciona em mobile (375px) e desktop (1920px)
+
+### Estrutura
+
+```
+frontend/e2e/
+├── property.spec.ts          # Testes da página de property
+├── chat.spec.ts              # Testes do chat
+├── error.spec.ts             # Testes de erros (404, etc.)
+└── responsiveness.spec.ts    # Testes de responsividade
+```
+
+### Rodar Testes E2E
+
+```bash
+cd frontend
+
+# Interface visual (recomendado para dev)
+npm run test:e2e
+
+# Modo headless (para CI/CD)
+npm run test:e2e -- --headed
+
+# Teste um arquivo específico
+npx playwright test e2e/property.spec.ts
+
+# Modo debug (passo a passo)
+npx playwright test --debug
+```
+
+### Exemplo: Teste E2E de Property
+
+```typescript
+// frontend/e2e/property.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('Property Page', () => {
+  test('deve exibir dados do imóvel corretamente', async ({ page }) => {
+    // Navegar para propriedade
+    await page.goto('http://localhost:3000/property/FLN001');
+
+    // Verificar título
+    await expect(page).toHaveTitle(/Apartamento Beira-Mar/);
+
+    // Verificar seções principais
+    await expect(page.locator('text=Apartamento Beira-Mar')).toBeVisible();
+    await expect(page.locator('text=Florianópolis')).toBeVisible();
+    await expect(page.locator('text=2 quartos')).toBeVisible();
+    await expect(page.locator('text=WiFi')).toBeVisible();
+  });
+
+  test('deve exibir guia de experiências', async ({ page }) => {
+    await page.goto('http://localhost:3000/property/FLN001');
+
+    // Aguardar carregamento do guia
+    await page.waitForSelector('text=Restaurantes Próximos', { timeout: 5000 });
+
+    // Verificar restaurantes
+    await expect(page.locator('text=Box 32')).toBeVisible();
+    await expect(page.locator('text=1,2 km')).toBeVisible();
+  });
+
+  test('deve permitir fazer pergunta no chat', async ({ page }) => {
+    await page.goto('http://localhost:3000/property/FLN001');
+
+    // Encontrar input de chat
+    const chatInput = page.locator('input[placeholder*="pergunta"]');
+    await chatInput.fill('Qual a senha do WiFi?');
+
+    // Enviar
+    await page.locator('button:has-text("Enviar")').click();
+
+    // Aguardar resposta
+    await expect(
+      page.locator('text=SeaHome_FLN001')
+    ).toBeVisible({ timeout: 5000 });
+  });
+
+  test('deve exibir 404 para código inválido', async ({ page }) => {
+    await page.goto('http://localhost:3000/property/INVALID');
+
+    // Verificar página de erro
+    await expect(page.locator('text=não encontrado')).toBeVisible();
+    await expect(page.locator('button:has-text("Voltar")')).toBeVisible();
+  });
+});
+```
+
+### Exemplo: Teste E2E de Chat
+
+```typescript
+// frontend/e2e/chat.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('Chat Assistant', () => {
+  test.beforeEach(async ({ page }) => {
+    // Sempre começar na página do imóvel
+    await page.goto('http://localhost:3000/property/FLN001');
+    // Aguardar chat carregar
+    await page.waitForSelector('[data-testid="chat-widget"]', { timeout: 3000 });
+  });
+
+  test('deve responder corretamente perguntas sobre WiFi', async ({ page }) => {
+    const chatInput = page.locator('input[placeholder*="pergunta"]');
+    await chatInput.fill('Qual a senha do WiFi?');
+    await page.locator('button:has-text("Enviar")').click();
+
+    // Verificar resposta (com timeout para streaming)
+    await expect(page.locator('text=floripa2024')).toBeVisible({ timeout: 3000 });
+  });
+
+  test('deve responder corretamente sobre animais', async ({ page }) => {
+    const chatInput = page.locator('input[placeholder*="pergunta"]');
+    await chatInput.fill('Posso trazer meu cachorro?');
+    await page.locator('button:has-text("Enviar")').click();
+
+    await expect(
+      page.locator('text=não permite')
+    ).toBeVisible({ timeout: 3000 });
+  });
+
+  test('deve responder sobre restaurantes', async ({ page }) => {
+    const chatInput = page.locator('input[placeholder*="pergunta"]');
+    await chatInput.fill('Que restaurantes tem perto?');
+    await page.locator('button:has-text("Enviar")').click();
+
+    // Deve mencionar um dos restaurantes do guia
+    await expect(
+      page.locator('text=Box 32|Armazém Vieira')
+    ).toBeVisible({ timeout: 5000 });
+  });
+});
+```
+
+### Teste de Responsividade
+
+```typescript
+// frontend/e2e/responsiveness.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('Responsividade', () => {
+  test('deve ser responsivo em mobile (375px)', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await page.goto('http://localhost:3000/property/FLN001');
+
+    // Verificar que conteúdo não fica cortado
+    const mainContent = page.locator('main, [role="main"]');
+    const box = await mainContent.boundingBox();
+    expect(box.width).toBeLessThanOrEqual(375);
+
+    // Verificar botões são touch-friendly (48px mínimo)
+    const buttons = page.locator('button');
+    for (const button of await buttons.all()) {
+      const box = await button.boundingBox();
+      expect(box.height).toBeGreaterThanOrEqual(48);
+    }
+  });
+
+  test('deve escalar corretamente em desktop (1920px)', async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.goto('http://localhost:3000/property/FLN001');
+
+    // Verificar que layout usa espaço disponível
+    const container = page.locator('[role="main"]');
+    const box = await container.boundingBox();
+    expect(box.width).toBeGreaterThan(900); // Aproveita espaço
+  });
+});
+```
+
+---
+
+## Cobertura Esperada
+
+### Por Camada
+
+| Camada | Ferramenta | Cobertura Mínima | Arquivos |
+|--------|-----------|------------------|----------|
+| **Backend Services** | Vitest | 80%+ | property.service, guidebook.service, chat.service |
+| **Backend Routes** | Vitest | 70%+ | property.routes, chat.routes |
+| **Frontend Hooks** | Vitest | 75%+ | useProperty, useGuidebook, useChat |
+| **Frontend Components** | Vitest | 50%+ | PropertyHeader, ChatWidget |
+| **E2E Fluxos** | Playwright | 100% (happy path) | property page, chat, 404 |
+
+### Exemplo: Rodar com Coverage
+
+```bash
+cd backend
+npm run test:unit -- --coverage
+
+# Gera report em coverage/index.html
+open coverage/index.html
+```
+
+---
+
+## CI/CD (GitHub Actions)
+
+Testes rodam automaticamente em cada push/PR:
+
+```yaml
+# .github/workflows/test.yml
+name: Tests
+
+on: [push, pull_request]
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run test:unit
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm run build
+      - run: npm run test:e2e
+```
+
+---
+
+## Melhores Práticas
+
+### ✅ Faça
+
+- ✅ Teste happy path + edge cases
+- ✅ Mock banco de dados em testes unitários
+- ✅ Use fixtures do Playwright para setup comum
+- ✅ Nomeie testes de forma descritiva
+- ✅ Mantenha testes rápidos (menos de 5 segundos por teste)
+- ✅ Não dependa de ordem de execução
+
+### ❌ Não Faça
+
+- ❌ Testes que dependem de dados específicos do BD
+- ❌ Testes lentos (>10s) sem motivo
+- ❌ Testes flaky (passam às vezes, às vezes não)
+- ❌ Mock excessivo (teste deve ser realista)
+- ❌ Ignore testes falhando (fix imediatamente)
+
+---
+
+**Próximo**: Veja como [Fazer Deploy no Railway](/guia-de-uso/deploy-railway).

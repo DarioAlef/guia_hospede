@@ -1,0 +1,335 @@
+---
+title: Organização em Vertical Slices
+description: Padrão de arquitetura Clean Code — componentes, serviços e dados por feature
+---
+
+# Organização em Vertical Slices
+
+## O Que é uma Vertical Slice?
+
+Uma **Vertical Slice** (Fatia Vertical) é um padrão arquitetural onde cada **feature** contém todos os seus elementos — UI, lógica, dados — organizados em uma pasta única, facilitando:
+
+- ✅ Paralelização de desenvolvimento
+- ✅ Testes independentes
+- ✅ Deploy de features isoladas
+- ✅ Compreensão rápida da feature
+
+Em vez de organizar por tipo de arquivo (`components/`, `services/`, `pages/`), organizamos **por negócio** (`property/`, `guidebook/`, `chat/`).
+
+## Estrutura no Projeto
+
+### Backend (Fastify)
+
+```
+backend/src/
+├── slices/
+│   ├── property/              # Slice 1: Dados do imóvel
+│   │   ├── property.routes.ts    # GET /properties/:code
+│   │   ├── property.service.ts   # Busca em BD
+│   │   ├── property.types.ts     # DTO, interfaces
+│   │   └── property.validator.ts # Zod schemas
+│   │
+│   ├── guidebook/             # Slice 2: Guia de experiências
+│   │   ├── guidebook.routes.ts   # POST /properties/:code/guidebook
+│   │   ├── guidebook.service.ts  # Geração por IA
+│   │   ├── guidebook.types.ts    # DTO
+│   │   └── guidebook.validator.ts
+│   │
+│   └── chat/                  # Slice 3: Assistente virtual
+│       ├── chat.routes.ts        # POST /chat (SSE streaming)
+│       ├── chat.service.ts       # Processamento com IA
+│       ├── chat.types.ts         # Message, Response types
+│       └── chat.validator.ts
+│
+├── shared/
+│   ├── middleware/            # Middleware compartilhado (logging, auth)
+│   ├── utils/                 # Utilities (formatadores, helpers)
+│   └── db/                    # Prisma schema, migrations
+│
+└── main.ts                    # Server setup
+```
+
+### Frontend (Next.js 14)
+
+```
+frontend/src/
+├── app/
+│   ├── layout.tsx             # Layout global
+│   ├── page.tsx               # Home
+│   └── property/
+│       └── [code]/
+│           └── page.tsx       # Dynamic page para /property/[code]
+│
+├── slices/
+│   ├── property/              # Slice 1: Página de propriedade
+│   │   ├── PropertyPage.tsx       # Componente container
+│   │   ├── hooks/
+│   │   │   └── useProperty.ts    # Hook customizado
+│   │   ├── components/
+│   │   │   ├── PropertyHeader.tsx
+│   │   │   ├── PropertyInfo.tsx
+│   │   │   ├── PropertyRules.tsx
+│   │   │   └── PropertyContact.tsx
+│   │   └── services/
+│   │       └── property.api.ts   # GET /api/properties/:code
+│   │
+│   ├── guidebook/             # Slice 2: Guia de experiências
+│   │   ├── GuidebookSection.tsx
+│   │   ├── components/
+│   │   │   ├── RestaurantCard.tsx
+│   │   │   ├── AttractionCard.tsx
+│   │   │   └── EssentialCard.tsx
+│   │   ├── hooks/
+│   │   │   └── useGuidebook.ts
+│   │   └── services/
+│   │       └── guidebook.api.ts
+│   │
+│   └── chat/                  # Slice 3: Chat assistente
+│       ├── ChatWidget.tsx
+│       ├── components/
+│       │   ├── ChatMessage.tsx
+│       │   ├── ChatInput.tsx
+│       │   └── ChatSkeleton.tsx
+│       ├── hooks/
+│       │   └── useChat.ts (Vercel AI SDK)
+│       └── services/
+│           └── chat.api.ts    # POST /api/chat (SSE)
+│
+└── shared/
+    ├── components/
+    │   ├── Skeleton.tsx
+    │   ├── ErrorBoundary.tsx
+    │   └── ...
+    ├── hooks/
+    │   ├── useAsync.ts
+    │   └── useIntersectionObserver.ts
+    ├── utils/
+    │   ├── formatters.ts
+    │   ├── validators.ts
+    │   └── ...
+    └── styles/
+        └── globals.css       # Tailwind + globals
+```
+
+## Fluxo de Uma Feature: Exemplo `property`
+
+### Backend
+
+```typescript
+// slices/property/property.types.ts
+export interface PropertyDTO {
+  code: string;
+  name: string;
+  city: string;
+  state: string;
+  address: { street: string; number: string; ... };
+  host: { name: string; phone: string };
+  amenities: Record<string, boolean>;
+  // ... 20+ campos
+}
+
+// slices/property/property.validator.ts
+import { z } from 'zod';
+
+const propertyCodeSchema = z.string()
+  .min(3).max(10)
+  .regex(/^[A-Z0-9]+$/);
+
+// slices/property/property.service.ts
+export class PropertyService {
+  async getByCode(code: string): Promise<PropertyDTO> {
+    const property = await prisma.property.findUnique({
+      where: { code },
+      include: { guidebook: true }
+    });
+    
+    if (!property) {
+      throw new NotFoundError(`Property ${code} not found`);
+    }
+    
+    return this.mapToDTO(property);
+  }
+}
+
+// slices/property/property.routes.ts
+fastifyApp.get<{ Params: { code: string } }>(
+  '/properties/:code',
+  async (req, reply) => {
+    const { code } = req.params;
+    propertyCodeSchema.parse(code); // Validar
+    
+    const property = await propertyService.getByCode(code);
+    return reply.status(200).send(property);
+  }
+);
+```
+
+### Frontend
+
+```typescript
+// slices/property/services/property.api.ts
+export async function fetchProperty(code: string): Promise<PropertyDTO> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/properties/${code}`
+  );
+  if (!res.ok) throw new Error(`Failed to fetch property`);
+  return res.json();
+}
+
+// slices/property/hooks/useProperty.ts
+import { useEffect, useState } from 'react';
+
+export function useProperty(code: string) {
+  const [property, setProperty] = useState<PropertyDTO | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    fetchProperty(code)
+      .then(setProperty)
+      .catch(setError)
+      .finally(() => setLoading(false));
+  }, [code]);
+
+  return { property, loading, error };
+}
+
+// slices/property/PropertyPage.tsx
+'use client';
+
+export function PropertyPage({ code }: { code: string }) {
+  const { property, loading, error } = useProperty(code);
+
+  if (error) return <ErrorBoundary error={error} />;
+  if (loading) return <Skeleton />;
+
+  return (
+    <div>
+      <PropertyHeader property={property} />
+      <PropertyInfo property={property} />
+      <PropertyRules property={property} />
+      <PropertyContact property={property} />
+    </div>
+  );
+}
+
+// app/property/[code]/page.tsx
+import { PropertyPage } from '@/slices/property/PropertyPage';
+
+export default function Page({ params: { code } }) {
+  return <PropertyPage code={code} />;
+}
+```
+
+## Benefícios da Arquitetura
+
+### 1. Paralelização
+
+```
+Time desenvolvedor 1: Implementa Property Slice (dados)
+Time desenvolvedor 2: Implementa Guidebook Slice (IA)  ← independente
+Time desenvolvedor 3: Implementa Chat Slice (chat)     ← independente
+```
+
+Cada slice é autossuficiente, sem bloqueios de integração.
+
+### 2. Testes Independentes
+
+```
+Test property.service.ts:
+  ✅ getByCode(valid)
+  ✅ getByCode(invalid) → 404
+  ✅ getByCode + guidebook include
+
+Test guidebook.service.ts:
+  ✅ generate(FLN001) → restaurantes em Florianópolis
+  ✅ generate timeout → fallback
+
+Test chat.service.ts:
+  ✅ processMessage com contexto de property
+  ✅ anti-alucinação: responde só dados reais
+```
+
+Cada slice tem testes que não dependem de outras slices.
+
+### 3. Compreensão Rápida
+
+Novo desenvolvedor entra no projeto:
+- "Quero entender Chat" → leia apenas `slices/chat/`
+- "Quero entender Property" → leia apenas `slices/property/`
+- Não precisa ler toda codebase
+
+### 4. Deploy Independente
+
+```bash
+# Deploy apenas a feature Chat (fix de bug)
+npm run build:chat
+npm run deploy:chat
+# Outras features continuam rodando (zero downtime)
+```
+
+(Em prática, o atual deploy é monolítico, mas a arquitetura permite evoluir)
+
+## Clean Code em Vertical Slices
+
+### Cada Slice Segue SOLID
+
+- **S**ingle Responsibility: PropertyService só busca Property
+- **O**pen/Closed: Fácil adicionar nova slice sem modificar existentes
+- **L**iskov: Interfaces consistentes (PropertyDTO mesmo em frontend/backend)
+- **I**nterface Segregation: Componentes recebem só o que usam
+- **D**ependency Inversion: Serviços injetados, não hardcoded
+
+### Exemplo: Adicionar Nova Slice `reviews`
+
+```
+slices/reviews/
+├── reviews.types.ts      # ReviewDTO
+├── reviews.service.ts    # getByProperty()
+├── reviews.validator.ts  # Schema Zod
+├── reviews.routes.ts     # GET /properties/:code/reviews
+└── components/           # ReviewCard, ReviewList
+```
+
+Nenhuma slice existente é modificada. Apenas adiciona uma rota nova no `main.ts`.
+
+## Alternativas Rejeitadas
+
+### ❌ Arquitetura por Tipo de Arquivo
+
+```
+components/     # 100+ componentes
+services/       # 50+ services
+pages/          # 30+ pages
+```
+
+**Problemas**:
+- Pasta `components/` cresce infinitamente
+- Difícil entender qual componente pertence a qual feature
+- Testes espalhados longe do código
+- Acoplamento inadvertido entre features
+
+### ❌ Organização em Camadas Stritas
+
+```
+presentation/   # Todos os componentes
+business/       # Toda lógica
+data/           # Todos os models
+```
+
+**Problemas**:
+- Modificação pequena exige tocar 3 pastas
+- Difícil fazer feature-branch isolada
+- Paralelização impossível
+
+## Conclusão
+
+Vertical Slices alinha-se com:
+- ✅ Critério "Clean Code" da avaliação
+- ✅ Facilidade de testes e manutenção
+- ✅ Desenvolvimento paralelo
+- ✅ Compreensão rápida de features
+
+---
+
+**Próximo**: Explore as [Funcionalidades Implementadas](/funcionalidades/visualizacao-guia).

@@ -1,0 +1,83 @@
+---
+title: Guia Digital do Hóspede
+description: Documentação completa do desafio técnico da Seazone — solução de guia digital personalizado com IA
+---
+
+# Bem-vindo ao Guia Digital do Hóspede
+
+Esta é a documentação técnica completa da solução de **Guia Digital Personalizado com IA** desenvolvida para a Seazone. Um projeto que transforma a experiência do hóspede ao substituir o folheto físico manual por um guia digital interativo, único para cada propriedade.
+
+## O Desafio
+
+Quando um hóspede faz uma reserva com a Seazone, ele recebe um folheto físico na chegada com todas as informações da estadia: senha do WiFi, como acessar o imóvel, regras da casa, o que fazer na região.
+
+Esse processo é **manual, sujeito a erros e depende do anfitrião lembrar de preparar o material**.
+
+A solução? Um **Guia Digital Único por Imóvel**, acessível via link personalizado (ex: `/FLN001`), com conteúdo enriquecido por IA e um assistente virtual que responde perguntas do hóspede em tempo real.
+
+## O Que Você Vai Encontrar
+
+Navegue pelas seções abaixo para entender cada aspecto do projeto:
+
+<CardGroup cols={2}>
+  <Card
+    title="Visão Geral"
+    icon="telescope"
+    href="/overview/contexto"
+  >
+    Contexto de negócio, objetivo e critérios de avaliação
+  </Card>
+  <Card
+    title="Arquitetura"
+    icon="sitemap"
+    href="/arquitetura/visao-geral"
+  >
+    Stack técnico, monorepo e organização em vertical slices
+  </Card>
+  <Card
+    title="Funcionalidades"
+    icon="sparkles"
+    href="/funcionalidades/visualizacao-guia"
+  >
+    Os 3 requisitos funcionais: Visualização, Guia de Experiências e Chat
+  </Card>
+  <Card
+    title="Decisões Técnicas"
+    icon="lightbulb"
+    href="/decisoes-tecnicas/decisoes"
+  >
+    ADRs, trade-offs e tratamento de erros
+  </Card>
+  <Card
+    title="Guia de Uso"
+    icon="rocket"
+    href="/guia-de-uso/quickstart"
+  >
+    Como rodar localmente, configurar e fazer deploy
+  </Card>
+</CardGroup>
+
+## Dados de Referência
+
+O projeto utiliza dois imóveis como exemplo:
+
+- **FLN001** — Apartamento Beira-Mar em Florianópolis/SC
+- **GRM001** — Chalé Serra em Gramado/RS
+
+Esses dados são públicos no enunciado do desafio e servem como base para testes e documentação.
+
+## Próximos Passos
+
+Se você está avaliando esta solução:
+
+1. **Comece pela seção Visão Geral** para entender o problema e objetivo
+2. **Explore a Arquitetura** para ver como tudo se conecta
+3. **Verifique as Funcionalidades** para validar que cada requisito foi atendido
+4. **Consulte o Guia de Uso** se quiser rodar localmente
+
+---
+
+**Desenvolvido por**: Dário Alef  
+**Desafio**: Seazone AI Builder — Teste Técnico 48h  
+**Data**: Junho de 2026  
+**Stack**: Next.js 14, Fastify 4, Prisma 5, Groq API, Mintlify
